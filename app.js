@@ -187,38 +187,79 @@ class App {
     setupXR() {
         this.renderer.xr.enabled = true;
 
+        function onSelectStart() {   
+            this.userData.selectPressed = true;
+        }
+
+        function onSelectEnd() {
+            this.userData.selectPressed = false;           
+        }
+
         this.controller = this.renderer.xr.getController(0);
+        this.controller.addEventListener( 'selectstart', onSelectStart );
+        this.controller.addEventListener( 'selectend', onSelectEnd );
+
         this.controller.addEventListener('connected', (e) => {
             this.controller.gamepad = e.data.gamepad;
 
-            const mesh = this.buildController.call(this, event.data);
+            const mesh = this.buildController.call(this, e.data);
             mesh.scale.z = 0;
-            this.add(mesh);
+            this.controller.add(mesh);
         });
-        this.controller.addEventListener('disconnected', function () {
+        this.controller.addEventListener('disconnected', () => {
 
-            this.remove(this.children[0]);
-            self.controller = null;
-            self.controllerGrip = null;
+            this.controller.remove(this.children[0]);
+            this.controller = null;
+            this.controllerGrip1 = null;
+            this.controllerGrip2 = null;
 
         });
         this.scene.add(this.controller);
 
+        const controllerModelFactory = new XRControllerModelFactory();
+
+        this.controllerGrip1 = this.renderer.xr.getControllerGrip( 0 );
+        this.controllerGrip1.add( controllerModelFactory.createControllerModel( this.controllerGrip1 ) );
+        this.controllerGrip2 = this.renderer.xr.getControllerGrip( 1 );
+        this.controllerGrip2.add( controllerModelFactory.createControllerModel( this.controllerGrip2 ) );
+
         this.dolly.add(this.controller);
+        this.dolly.add(this.controllerGrip1);
+        this.dolly.add(this.controllerGrip2);
     }
 
     buildController(data) {
+        let geometry, material;
+        
+        switch ( data.targetRayMode ) {
+            
+            case 'tracked-pointer':
 
+                geometry = new THREE.BufferGeometry();
+                geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( [ 0, 0, 0, 0, 0, - 1 ], 3 ) );
+                geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( [ 0.5, 0.5, 0.5, 0, 0, 0 ], 3 ) );
+
+                material = new THREE.LineBasicMaterial( { vertexColors: true, blending: THREE.AdditiveBlending } );
+
+                return new THREE.Line( geometry, material );
+
+            case 'gaze':
+
+                geometry = new THREE.RingBufferGeometry( 0.02, 0.04, 32 ).translate( 0, 0, - 1 );
+                material = new THREE.MeshBasicMaterial( { opacity: 0.5, transparent: true } );
+                return new THREE.Mesh( geometry, material );
+
+        }
     }
 
-    handleController(controller, dt) {
+    handleController(controller, speedDelta) {
         if (controller.userData.selectPressed) {
-            const speed = 2;
-            const quaternion = this.dolly.quaternion.clone();
-            this.dolly.quaternion.copy(this.dummyCam.getWorldQuaternion());
-            this.dolly.translateZ(- speed * dt);
-            this.dolly.position.y = 0;
-            this.dolly.quaternion.copy(quaternion);
+            // const speed = 2;
+            // const quaternion = this.dolly.quaternion.clone();
+            // this.dolly.quaternion.copy(this.dummyCam.getWorldQuaternion());
+            // this.dolly.translateZ(- speed * dt);
+            // this.dolly.position.y = 0;
+            // this.dolly.quaternion.copy(quaternion);
         }
     }
 
@@ -452,20 +493,24 @@ class App {
             }
         }
 
-        if (this.controller.gamepad) {
-            //throw ball
-            if (this.controller.gamepad.buttons[0].pressed) {
-                this.throwBall();
-            }
-
-            //jump
-            if (this.controller.gamepad.buttons[3].pressed) {
-                this.playerVelocity.y = 15;
-            }
-            this.playerVelocity.add(getForwardVector().multiplyScalar(this.controller.gamepad.axes[0] * speedDelta));
-            this.playerVelocity.add(getSideVector().multiplyScalar(this.controller.gamepad.axes[1] * speedDelta));
-
+        if (this.controller.userData.selectPressed) {
+            this.playerVelocity.add(this.getForwardVector().multiplyScalar(speedDelta));
         }
+
+        // if (this.controller.gamepad) {
+        //     //throw ball
+        //     if (this.controller.gamepad.buttons[0].pressed) {
+        //         this.throwBall();
+        //     }
+
+        //     //jump
+        //     if (this.controller.gamepad.buttons[3].pressed) {
+        //         this.playerVelocity.y = 15;
+        //     }
+        //     this.playerVelocity.add(this.getForwardVector().multiplyScalar(this.controller.gamepad.axes[0] * speedDelta));
+        //     this.playerVelocity.add(this.getSideVector().multiplyScalar(this.controller.gamepad.axes[1] * speedDelta));
+
+        // }
 
     }
 
