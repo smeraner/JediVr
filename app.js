@@ -11,7 +11,7 @@ import { Capsule } from './three/addons/math/Capsule.js';
 import { GUI } from './three/addons/libs/lil-gui.module.min.js';
 import { VRButton } from './three/addons/webxr/VRButton.js';
 import { XRControllerModelFactory } from './three/addons/webxr/XRControllerModelFactory.js';
-import { XRHandModelFactory } from './three/addons/webxr/XRHandModelFactory.js';
+import { createText } from './three/addons/webxr/Text2D.js';
 
 class App {
 
@@ -200,7 +200,7 @@ class App {
         this.controller.addEventListener( 'selectend', onSelectEnd );
 
         this.controller.addEventListener('connected', (e) => {
-            this.controller.gamepad = e.data.gamepad;
+            this.controller.gamepad1 = e.data.gamepad;
 
             const mesh = this.buildController.call(this, e.data);
             mesh.scale.z = 0;
@@ -222,6 +222,10 @@ class App {
         this.controllerGrip1.add( controllerModelFactory.createControllerModel( this.controllerGrip1 ) );
         this.controllerGrip2 = this.renderer.xr.getControllerGrip( 1 );
         this.controllerGrip2.add( controllerModelFactory.createControllerModel( this.controllerGrip2 ) );
+
+        this.instructionText = createText( 'This is a demo.', 0.04 );
+		this.instructionText.position.set( 0, 1.6, - 0.6 );
+        this.dolly.add(this.instructionText);
 
         this.dolly.add(this.controller);
         this.dolly.add(this.controllerGrip1);
@@ -497,24 +501,41 @@ class App {
             this.playerVelocity.add(this.getForwardVector().multiplyScalar(speedDelta));
         }
 
-        // if (this.controller.gamepad) {
-        //     //throw ball
-        //     if (this.controller.gamepad.buttons[0].pressed) {
-        //         this.throwBall();
-        //     }
+        if (this.controller.gamepad1) {
+            // let debugText = `Gamepad: ${this.controller.gamepad1.id}\nButtons: ${this.controller.gamepad1.buttons.length}\nAxes: ${this.controller.gamepad1.axes.length}\n`;
+            // // for (let i = 0; i < this.controller.gamepad1.buttons.length; i++) {
+            // //     debugText += `Button ${i}: ${this.controller.gamepad1.buttons[i].pressed}\n`;
+            // // }
+            // for (let i = 0; i < this.controller.gamepad1.axes.length; i++) {
+            //     debugText += `Axis ${i}: ${this.controller.gamepad1.axes[i]}\n`;
+            // }
+            // this.updateInstructionText(debugText);
+            //throw ball
+            // if (this.controller.gamepad1.buttons[0].pressed) {
+            //     this.throwBall();
+            // }
 
-        //     //jump
-        //     if (this.controller.gamepad.buttons[3].pressed) {
-        //         this.playerVelocity.y = 15;
-        //     }
-        //     this.playerVelocity.add(this.getForwardVector().multiplyScalar(this.controller.gamepad.axes[0] * speedDelta));
-        //     this.playerVelocity.add(this.getSideVector().multiplyScalar(this.controller.gamepad.axes[1] * speedDelta));
+            //jump
+            if (this.playerOnFloor && this.controller.gamepad1.buttons[1].pressed) {
+                this.playerVelocity.y = 15;
+            }
 
-        // }
+            //move
+            if(this.controller.gamepad1.axes[3] > 0.2) this.playerVelocity.add(this.getForwardVector().multiplyScalar(-speedDelta));
+            if(this.controller.gamepad1.axes[3] < -0.2) this.playerVelocity.add(this.getForwardVector().multiplyScalar(speedDelta));
+            if(this.controller.gamepad1.axes[2] > 0.2) this.playerVelocity.add(this.getSideVector().multiplyScalar(speedDelta));
+            if(this.controller.gamepad1.axes[2] < -0.2) this.playerVelocity.add(this.getSideVector().multiplyScalar(-speedDelta));
+
+        }
 
     }
 
-
+    updateInstructionText(text) {
+        this.dolly.remove(this.instructionText);
+        this.instructionText = createText( text, 0.04 );
+        this.instructionText.position.set( 0, 1.6, - 0.6 );
+        this.dolly.add(this.instructionText);
+    }
 
     teleportPlayerIfOob() {
 
