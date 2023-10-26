@@ -80,11 +80,13 @@ class App {
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.VSMShadowMap;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.xr.enabled = true;
         this.container.appendChild(this.renderer.domElement);
         document.body.appendChild(VRButton.createButton(this.renderer));
 
-        this.initScene();
+    }
+
+    async init() {
+        await this.initScene();
         this.setupXR();
 
         window.addEventListener('resize', this.resize.bind(this));
@@ -115,13 +117,16 @@ class App {
         this.renderer.setAnimationLoop(this.animate.bind(this));
     }
 
+    /***
+     * @returns {Promise}
+     */
     initScene() {
 
         this.scene.background = new THREE.Color(0x88ccee);
         this.scene.fog = new THREE.Fog(0x88ccee, 0, 50);
 
         this.dolly = new THREE.Object3D();
-        this.dolly.position.set(0, 0, 0);
+        this.dolly.position.z = 5;
         this.dolly.add(this.camera);
         this.scene.add(this.dolly);
 
@@ -129,31 +134,35 @@ class App {
         this.camera.add(this.dummyCam);
 
         this.loader = new GLTFLoader().setPath('./models/gltf/');
-        this.loader.load('collision-world.glb', (gltf) => {
-            this.scene.add(gltf.scene);
-            this.worldOctree.fromGraphNode(gltf.scene);
-            gltf.scene.traverse(child => {
-                if (child.isMesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
 
-                    if (child.material.map) {
-                        child.material.map.anisotropy = 4;
+        const promise = new Promise((resolve, reject) => {
+
+            this.loader.load('collision-world.glb', (gltf) => {
+                this.scene.add(gltf.scene);
+                this.worldOctree.fromGraphNode(gltf.scene);
+                gltf.scene.traverse(child => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+
+                        if (child.material.map) {
+                            child.material.map.anisotropy = 4;
+                        }
                     }
-                }
-            });
-
-            const helper = new OctreeHelper(this.worldOctree);
-            helper.visible = false;
-            this.scene.add(helper);
-
-            this.gui = new GUI({ width: 200 });
-            this.gui.add({ debug: false }, 'debug')
-                .onChange(function (value) {
-
-                    helper.visible = value;
-
                 });
+
+                const helper = new OctreeHelper(this.worldOctree);
+                helper.visible = false;
+                this.scene.add(helper);
+
+                this.gui = new GUI({ width: 200 });
+                this.gui.add({ debug: false }, 'debug')
+                    .onChange(function (value) {
+                        helper.visible = value;
+                    });
+
+                resolve();
+            });
         });
 
         for (let i = 0; i < this.NUM_SPHERES; i++) {
@@ -171,13 +180,30 @@ class App {
             });
 
         }
+
+        return promise;
     }
 
     setupXR() {
+        this.renderer.xr.enabled = true;
+
         this.controller = this.renderer.xr.getController(0);
         this.controller.addEventListener('connected', (e) => {
             this.controller.gamepad = e.data.gamepad;
+
+            const mesh = this.buildController.call(this, event.data);
+            mesh.scale.z = 0;
+            this.add(mesh);
         });
+        this.controller.addEventListener('disconnected', function () {
+
+            this.remove(this.children[0]);
+            self.controller = null;
+            self.controllerGrip = null;
+
+        });
+        this.scene.add(this.controller);
+
         this.dolly.add(this.controller);
     }
 
@@ -187,7 +213,12 @@ class App {
 
     handleController(controller, dt) {
         if (controller.userData.selectPressed) {
-
+            const speed = 2;
+            const quaternion = this.dolly.quaternion.clone();
+            this.dolly.quaternion.copy(this.dummyCam.getWorldQuaternion());
+            this.dolly.translateZ(- speed * dt);
+            this.dolly.position.y = 0;
+            this.dolly.quaternion.copy(quaternion);
         }
     }
 
@@ -261,7 +292,7 @@ class App {
 
         this.playerCollisions();
 
-        this.camera.position.copy(this.playerCollider.end);
+        this.dolly.position.copy(this.playerCollider.end);
 
     }
 
@@ -447,7 +478,7 @@ class App {
             this.playerCollider.start.set(0, 0.35, 0);
             this.playerCollider.end.set(0, 1, 0);
             this.playerCollider.radius = 0.35;
-            this.camera.position.copy(playerCollider.end);
+            this.camera.position.copy(this.playerCollider.end);
             this.camera.rotation.set(0, 0, 0);
 
         }
@@ -464,6 +495,8 @@ class App {
         for (let i = 0; i < this.STEPS_PER_FRAME; i++) {
 
             this.controls(deltaTime);
+
+            if (this.controller) this.handleController(this.controller, deltaTime);
 
             this.updatePlayer(deltaTime);
 
