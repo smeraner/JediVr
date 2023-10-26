@@ -187,17 +187,7 @@ class App {
     setupXR() {
         this.renderer.xr.enabled = true;
 
-        function onSelectStart() {   
-            this.userData.selectPressed = true;
-        }
-
-        function onSelectEnd() {
-            this.userData.selectPressed = false;           
-        }
-
         this.controller = this.renderer.xr.getController(0);
-        this.controller.addEventListener( 'selectstart', onSelectStart );
-        this.controller.addEventListener( 'selectend', onSelectEnd );
 
         this.controller.addEventListener('connected', (e) => {
             this.controller.gamepad1 = e.data.gamepad;
@@ -217,7 +207,6 @@ class App {
         this.scene.add(this.controller);
 
         const controllerModelFactory = new XRControllerModelFactory();
-
         this.controllerGrip1 = this.renderer.xr.getControllerGrip( 0 );
         this.controllerGrip1.add( controllerModelFactory.createControllerModel( this.controllerGrip1 ) );
         this.controllerGrip2 = this.renderer.xr.getControllerGrip( 1 );
