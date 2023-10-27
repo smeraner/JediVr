@@ -109,8 +109,8 @@ class App {
 
         document.body.addEventListener('mousemove', (event) => {
             if (document.pointerLockElement === document.body) {
-                this.camera.rotation.y -= event.movementX / 500;
-                this.camera.rotation.x -= event.movementY / 500;
+                this.dolly.rotation.y -= event.movementX / 500;
+                this.dolly.rotation.x -= event.movementY / 500;
             }
         });
 
@@ -126,6 +126,7 @@ class App {
         this.scene.fog = new THREE.Fog(0x88ccee, 0, 50);
 
         this.dolly = new THREE.Object3D();
+        this.dolly.rotation.order = 'YXZ';
         this.dolly.position.z = 5;
         this.dolly.add(this.camera);
         this.scene.add(this.dolly);
@@ -187,24 +188,15 @@ class App {
     setupXR() {
         this.renderer.xr.enabled = true;
 
-        this.controller = this.renderer.xr.getController(0);
-
-        this.controller.addEventListener('connected', (e) => {
-            this.controller.gamepad1 = e.data.gamepad;
-
-            const mesh = this.buildController.call(this, e.data);
-            mesh.scale.z = 0;
-            this.controller.add(mesh);
+        this.controller1 = this.renderer.xr.getController(0);
+        this.controller1.addEventListener('connected', (e) => {
+            this.controller1.gamepad = e.data.gamepad;
         });
-        this.controller.addEventListener('disconnected', () => {
 
-            this.controller.remove(this.children[0]);
-            this.controller = null;
-            this.controllerGrip1 = null;
-            this.controllerGrip2 = null;
-
+        this.controller2 = this.renderer.xr.getController(1);
+        this.controller2.addEventListener('connected', (e) => {
+            this.controller2.gamepad = e.data.gamepad;
         });
-        this.scene.add(this.controller);
 
         const controllerModelFactory = new XRControllerModelFactory();
         this.controllerGrip1 = this.renderer.xr.getControllerGrip( 0 );
@@ -212,48 +204,14 @@ class App {
         this.controllerGrip2 = this.renderer.xr.getControllerGrip( 1 );
         this.controllerGrip2.add( controllerModelFactory.createControllerModel( this.controllerGrip2 ) );
 
-        this.instructionText = createText( 'This is a demo.', 0.04 );
+        this.instructionText = createText( '', 0.04 );
 		this.instructionText.position.set( 0, 1.6, - 0.6 );
         this.dolly.add(this.instructionText);
 
-        this.dolly.add(this.controller);
+        this.dolly.add(this.controller1);
+        this.dolly.add(this.controller2);
         this.dolly.add(this.controllerGrip1);
         this.dolly.add(this.controllerGrip2);
-    }
-
-    buildController(data) {
-        let geometry, material;
-        
-        switch ( data.targetRayMode ) {
-            
-            case 'tracked-pointer':
-
-                geometry = new THREE.BufferGeometry();
-                geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( [ 0, 0, 0, 0, 0, - 1 ], 3 ) );
-                geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( [ 0.5, 0.5, 0.5, 0, 0, 0 ], 3 ) );
-
-                material = new THREE.LineBasicMaterial( { vertexColors: true, blending: THREE.AdditiveBlending } );
-
-                return new THREE.Line( geometry, material );
-
-            case 'gaze':
-
-                geometry = new THREE.RingBufferGeometry( 0.02, 0.04, 32 ).translate( 0, 0, - 1 );
-                material = new THREE.MeshBasicMaterial( { opacity: 0.5, transparent: true } );
-                return new THREE.Mesh( geometry, material );
-
-        }
-    }
-
-    handleController(controller, speedDelta) {
-        if (controller.userData.selectPressed) {
-            // const speed = 2;
-            // const quaternion = this.dolly.quaternion.clone();
-            // this.dolly.quaternion.copy(this.dummyCam.getWorldQuaternion());
-            // this.dolly.translateZ(- speed * dt);
-            // this.dolly.position.y = 0;
-            // this.dolly.quaternion.copy(quaternion);
-        }
     }
 
     resize() {
@@ -486,35 +444,43 @@ class App {
             }
         }
 
-        if (this.controller.userData.selectPressed) {
+        if (this.controller1.userData.selectPressed) {
             this.playerVelocity.add(this.getForwardVector().multiplyScalar(speedDelta));
         }
 
-        if (this.controller.gamepad1) {
-            // let debugText = `Gamepad: ${this.controller.gamepad1.id}\nButtons: ${this.controller.gamepad1.buttons.length}\nAxes: ${this.controller.gamepad1.axes.length}\n`;
-            // // for (let i = 0; i < this.controller.gamepad1.buttons.length; i++) {
-            // //     debugText += `Button ${i}: ${this.controller.gamepad1.buttons[i].pressed}\n`;
-            // // }
-            // for (let i = 0; i < this.controller.gamepad1.axes.length; i++) {
-            //     debugText += `Axis ${i}: ${this.controller.gamepad1.axes[i]}\n`;
-            // }
-            // this.updateInstructionText(debugText);
+        if (this.controller1.gamepad) {
             //throw ball
             // if (this.controller.gamepad1.buttons[0].pressed) {
             //     this.throwBall();
             // }
 
             //jump
-            if (this.playerOnFloor && this.controller.gamepad1.buttons[1].pressed) {
+            if (this.playerOnFloor && this.controller1.gamepad.buttons[1].pressed) {
                 this.playerVelocity.y = 15;
             }
-
             //move
-            if(this.controller.gamepad1.axes[3] > 0.2) this.playerVelocity.add(this.getForwardVector().multiplyScalar(-speedDelta));
-            if(this.controller.gamepad1.axes[3] < -0.2) this.playerVelocity.add(this.getForwardVector().multiplyScalar(speedDelta));
-            if(this.controller.gamepad1.axes[2] > 0.2) this.playerVelocity.add(this.getSideVector().multiplyScalar(speedDelta));
-            if(this.controller.gamepad1.axes[2] < -0.2) this.playerVelocity.add(this.getSideVector().multiplyScalar(-speedDelta));
+            if(this.controller1.gamepad.axes[3] > 0.2) this.playerVelocity.add(this.getForwardVector().multiplyScalar(-speedDelta));
+            if(this.controller1.gamepad.axes[3] < -0.2) this.playerVelocity.add(this.getForwardVector().multiplyScalar(speedDelta));
+            if(this.controller1.gamepad.axes[2] > 0.2) this.playerVelocity.add(this.getSideVector().multiplyScalar(speedDelta));
+            if(this.controller1.gamepad.axes[2] < -0.2) this.playerVelocity.add(this.getSideVector().multiplyScalar(-speedDelta));
+        }
 
+        if (this.controller2.gamepad) {
+            // let debugText = `Gamepad: ${this.controller1.gamepad.id}\nButtons: ${this.controller1.gamepad.buttons.length}\nAxes: ${this.controller1.gamepad.axes.length}\n`;
+            // // for (let i = 0; i < this.controller.gamepad1.buttons.length; i++) {
+            // //     debugText += `Button ${i}: ${this.controller.gamepad1.buttons[i].pressed}\n`;
+            // // }
+            // for (let i = 0; i < this.controller1.gamepad.axes.length; i++) {
+            //     debugText += `Axis ${i}: ${this.controller1.gamepad.axes[i]}\n`;
+            // }
+            // this.updateInstructionText(debugText);
+
+            if(this.controller2.gamepad.axes[2] > 0.2) {
+                this.dolly.rotation.y -= 0.005;
+            }
+            if(this.controller2.gamepad.axes[2] < -0.2) {
+                this.dolly.rotation.y += 0.005;
+            }
         }
 
     }
@@ -550,8 +516,6 @@ class App {
         for (let i = 0; i < this.STEPS_PER_FRAME; i++) {
 
             this.controls(deltaTime);
-
-            if (this.controller) this.handleController(this.controller, deltaTime);
 
             this.updatePlayer(deltaTime);
 
