@@ -134,40 +134,61 @@ class App {
         this.dummyCam = new THREE.Object3D();
         this.camera.add(this.dummyCam);
 
-        this.loader = new GLTFLoader().setPath('./models/gltf/');
+        this.loadingManager = new THREE.LoadingManager();
+        this.textureLoader = new THREE.TextureLoader( this.loadingManager );
+        this.gltfLoader = new GLTFLoader(this.loadingManager).setPath('./models/gltf/');
 
-        const promise = new Promise((resolve, reject) => {
+        // Create the panoramic sphere geometery
+        const panoSphereGeo = new THREE.SphereGeometry( 32, 256, 256 );
+        // Create the panoramic sphere material
+        const panoSphereMat = new THREE.MeshStandardMaterial( {
+            side: THREE.BackSide,
+            displacementScale: - 4.0
+        } );
+        // Create the panoramic sphere mesh
+        const sphere = new THREE.Mesh( panoSphereGeo, panoSphereMat );
+        this.scene.add( sphere );
+        this.textureLoader.load( './textures/kandao3.jpg', function ( texture ) {
+            texture.colorSpace = THREE.SRGBColorSpace;
+            texture.minFilter = THREE.NearestFilter;
+            texture.generateMipmaps = false;
+            sphere.material.map = texture;
+        } );
 
-            this.loader.load('collision-world.glb', (gltf) => {
-                this.scene.add(gltf.scene);
-                this.worldOctree.fromGraphNode(gltf.scene);
-                gltf.scene.traverse(child => {
-                    if (child.isMesh) {
-                        child.castShadow = true;
-                        child.receiveShadow = true;
+        this.textureLoader.load( './textures/kandao3_depthmap.jpg', function ( depth ) {
+            depth.minFilter = THREE.NearestFilter;
+            depth.generateMipmaps = false;
+            sphere.material.displacementMap = depth;
+        } );
 
-                        if (child.material.map) {
-                            child.material.map.anisotropy = 4;
-                        }
+        
+        this.gltfLoader.load('collision-world.glb', (gltf) => {
+            this.scene.add(gltf.scene);
+            this.worldOctree.fromGraphNode(gltf.scene);
+            gltf.scene.traverse(child => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+
+                    if (child.material.map) {
+                        child.material.map.anisotropy = 4;
                     }
-                });
-
-                const helper = new OctreeHelper(this.worldOctree);
-                helper.visible = false;
-                this.scene.add(helper);
-
-                this.gui = new GUI({ width: 200 });
-                this.gui.add({ debug: false }, 'debug')
-                    .onChange(function (value) {
-                        helper.visible = value;
-                    });
-
-                resolve();
+                }
             });
+
+            const helper = new OctreeHelper(this.worldOctree);
+            helper.visible = false;
+            this.scene.add(helper);
+
+            this.gui = new GUI({ width: 200 });
+            this.gui.add({ debug: false }, 'debug')
+                .onChange(function (value) {
+                    helper.visible = value;
+                });
         });
 
-        for (let i = 0; i < this.NUM_SPHERES; i++) {
 
+        for (let i = 0; i < this.NUM_SPHERES; i++) {
             const sphere = new THREE.Mesh(this.sphereGeometry, this.sphereMaterial);
             sphere.castShadow = true;
             sphere.receiveShadow = true;
@@ -179,10 +200,16 @@ class App {
                 collider: new THREE.Sphere(new THREE.Vector3(0, - 100, 0), this.SPHERE_RADIUS),
                 velocity: new THREE.Vector3()
             });
-
         }
 
-        return promise;
+        const worldPromise = new Promise((resolve, reject) => {
+            // On load complete add the panoramic sphere to the scene
+            this.loadingManager.onLoad = function () {
+                resolve();
+            };
+        });
+
+        return worldPromise;
     }
 
     setupXR() {
