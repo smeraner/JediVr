@@ -218,11 +218,21 @@ class App {
         this.controller1 = this.renderer.xr.getController(0);
         this.controller1.addEventListener('connected', (e) => {
             this.controller1.gamepad = e.data.gamepad;
+            this.controller1.add( this.buildController( e.data ) );
+        });
+        this.controller1.addEventListener('disconnected', (e) => {
+            this.controller1.gamepad = null;
+            this.controller1.remove( this.controller1.children[0] );
         });
 
         this.controller2 = this.renderer.xr.getController(1);
         this.controller2.addEventListener('connected', (e) => {
             this.controller2.gamepad = e.data.gamepad;
+            this.controller2.add( this.buildController( e.data ) );
+        });
+        this.controller2.addEventListener('disconnected', (e) => {
+            this.controller2.gamepad = null;
+            this.controller2.remove( this.controller2.children[0] );
         });
 
         const controllerModelFactory = new XRControllerModelFactory();
@@ -240,6 +250,18 @@ class App {
         this.dolly.add(this.controllerGrip1);
         this.dolly.add(this.controllerGrip2);
     }
+
+    buildController( data ) {
+        let geometry, material;
+        geometry = new THREE.BufferGeometry();
+        geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( [ 0, 0, 0, 0, 0, - 1 ], 3 ) );
+        geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( [ 0.5, 0.5, 0.5, 0, 0, 0 ], 3 ) );
+
+        material = new THREE.LineBasicMaterial( { vertexColors: true, blending: THREE.AdditiveBlending } );
+
+        return new THREE.Line( geometry, material );
+    }
+
 
     resize() {
         this.camera.aspect = window.innerWidth / window.innerHeight;
