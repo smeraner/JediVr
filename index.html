@@ -16,14 +16,14 @@
         <script type="importmap">
             {
               "imports": {
-                "three": "/three/three.module.js",
-                "three/addons/": "/three/addons/"
+                "three": "/src/three/three.module.js",
+                "three/addons/": "/src/three/addons/"
               }
             }
           </script>
 
 		  <script type="module">
-            import { App } from './app.js';
+            import { App } from './src/app.js';
 
             document.addEventListener("DOMContentLoaded", function(){
                 const app = new App();

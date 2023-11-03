@@ -88,7 +88,13 @@ class App {
     async init() {
         await this.initScene();
         this.setupXR();
+        await this.initAudio();
 
+        //init audio on first click
+        this.container.addEventListener('mousedown', () => {
+            this.playAudio();
+        }, { once: true });
+        
         window.addEventListener('resize', this.resize.bind(this));
         document.addEventListener('keydown', (event) => {
             this.keyStates[event.code] = true;
@@ -210,6 +216,34 @@ class App {
         });
 
         return worldPromise;
+    }
+
+    async initAudio() {
+        this.listener = new THREE.AudioListener();
+        this.camera.add(this.listener);
+
+        this.sound = new THREE.Audio(this.listener);
+        const audioLoader = new THREE.AudioLoader();
+        const initSound = await audioLoader.loadAsync('sounds/init.mp3');
+        this.sound.setBuffer(initSound);
+        this.sound.setLoop(false);
+        this.sound.setVolume(0.3);
+
+
+        // audioLoader.load('sounds/358232_j_s_song.ogg', function (buffer) {
+        //     sound.setBuffer(buffer);
+        //     sound.setLoop(true);
+        //     sound.setVolume(0.1);
+        //     sound.play();
+        // }); 
+    }
+
+    playAudio() {
+        this.sound.play();
+    }
+
+    stopAudio() {
+        this.sound.stop();
     }
 
     setupXR() {
