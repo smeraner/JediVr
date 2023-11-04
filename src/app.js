@@ -13,6 +13,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 import { Player } from './player.js';
 import { World } from './world.js';
+import { Saber } from './saber.js';
 
 class App {
 
@@ -66,6 +67,13 @@ class App {
         //init audio on first click
         this.container.addEventListener('mousedown', () => {
             this.playAudio();
+            
+            //debug add light saber to player
+            this.saber = this.buildLightSaber();
+            this.saber.position.set(0, -0.5,  -1.6);
+            this.saber.on();
+            this.scene.add(this.saber);
+
         }, { once: true });
         
         window.addEventListener('resize', this.resize.bind(this));
@@ -108,12 +116,6 @@ class App {
         //init player
         this.player = new Player(this.scene, this.GRAVITY);
         this.camera = this.player.getCamera();
-
-        //debug add light saber to player
-        this.saber = this.buildLightSaber();
-        this.saber.position.set(0, -0.5,  -1.6);
-        this.saber.rotation.set(0, 1, 0);
-        this.scene.add(this.saber);
 
         //init effect postprocessing
         const bloomLayer = new THREE.Layers();
@@ -205,7 +207,8 @@ class App {
         this.controller1 = this.renderer.xr.getController(0);
         this.controller1.addEventListener('connected', (e) => {
             this.controller1.gamepad = e.data.gamepad;
-            this.controller1.add( this.buildLightSaber( e.data ) );
+            this.saber1 = this.buildLightSaber( e.data )
+            this.controller1.add( this.saber1 );
         });
         this.controller1.addEventListener('disconnected', (e) => {
             this.controller1.gamepad = null;
@@ -215,7 +218,8 @@ class App {
         this.controller2 = this.renderer.xr.getController(1);
         this.controller2.addEventListener('connected', (e) => {
             this.controller2.gamepad = e.data.gamepad;
-            this.controller2.add( this.buildLightSaber( e.data ) );
+            this.saber2 = this.buildLightSaber( e.data )
+            this.controller2.add( this.saber2 );
         });
         this.controller2.addEventListener('disconnected', (e) => {
             this.controller2.gamepad = null;
@@ -240,30 +244,7 @@ class App {
 
     buildLightSaber( data ) {
 
-        const saber = new THREE.Object3D();
-
-        const handleGeometry = new THREE.CylinderGeometry(0.03,0.03,0.3,8,1,false);
-        const handleMaterial = new THREE.MeshStandardMaterial({
-            color: 'grey',
-            flatShading: false,
-            });
-        const handle = new THREE.Mesh(handleGeometry, handleMaterial);
-
-        const bladeGeometry = new THREE.CylinderGeometry(0.03,0.03,1.3,8,1,false);
-        const bladeMaterial = new THREE.MeshStandardMaterial({
-            color: 'white',
-            emissive: 'white',
-            emissiveIntensity: 0.5,
-            flatShading: false,
-            });
-        const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
-        blade.layers.toggle( this.BLOOM_SCENE );
-        blade.position.set(0, 0.8, 0);
-
-        saber.add(handle);
-        saber.add(blade);
-        // geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( [ 0, 0, 0, 0, 0, - 1 ], 3 ) );
-        // geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( [ 0.5, 0.5, 0.5, 0, 0, 0 ], 3 ) );
+        const saber = new Saber(this.BLOOM_SCENE, this.listener);
 
         return saber;
     }
@@ -451,15 +432,15 @@ class App {
             }
         }
 
-        if (this.controller1.userData.selectPressed) {
-            this.player.playerVelocity.add(this.getForwardVector().multiplyScalar(speedDelta));
-        }
-
-        if (this.controller1.gamepad) {
+        if (this.controller1.gamepad && this.controller1.gamepad.axes.length > 0) {
             //throw ball
             // if (this.controller.gamepad1.buttons[0].pressed) {
             //     this.throwBall();
             // }
+
+            if(this.controller1.gamepad.buttons[0].pressed) {
+                this.saber1.toggle();
+            }
 
             //jump
             if (this.player.playerOnFloor && this.controller1.gamepad.buttons[1].pressed) {
@@ -481,6 +462,10 @@ class App {
             //     debugText += `Axis ${i}: ${this.controller1.gamepad.axes[i]}\n`;
             // }
             // this.updateInstructionText(debugText);
+
+            if(this.controller2.gamepad.buttons[0].pressed) {
+                this.saber2.toggle();
+            }
 
             if(this.controller2.gamepad.axes[2] > 0.2) {
                 this.player.rotation.y -= 0.005;
@@ -532,7 +517,9 @@ class App {
 
         }
 
-        this.render();
+        this.renderer.render(this.scene, this.camera);
+
+        //this.render();
     }
 
     render() {
