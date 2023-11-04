@@ -53,16 +53,22 @@ export class World extends THREE.Object3D {
         const sphere = new THREE.Mesh(panoSphereGeo, panoSphereMat);
         this.scene.add(sphere);
 
-        const texture = await this.textureLoader.loadAsync('./textures/kandao3.jpg')
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.minFilter = THREE.NearestFilter;
-        texture.generateMipmaps = false;
-        sphere.material.map = texture;
+        const panoramicTexture = await this.textureLoader.loadAsync('./textures/kandao3.jpg')
+        panoramicTexture.colorSpace = THREE.SRGBColorSpace;
+        panoramicTexture.minFilter = THREE.NearestFilter;
+        panoramicTexture.generateMipmaps = false;
+        sphere.material.map = panoramicTexture;
 
-        const depth = await this.textureLoader.loadAsync('./textures/kandao3_depthmap.jpg')
-        depth.minFilter = THREE.NearestFilter;
-        depth.generateMipmaps = false;
-        sphere.material.displacementMap = depth;
+        const panoramicDepth = await this.textureLoader.loadAsync('./textures/kandao3_depthmap.jpg')
+        panoramicDepth.minFilter = THREE.NearestFilter;
+        panoramicDepth.generateMipmaps = false;
+        sphere.material.displacementMap = panoramicDepth;
+
+        // const worldTexture = await this.textureLoader.loadAsync('./textures/brick_bump.jpg')
+        // worldTexture.minFilter = THREE.NearestFilter;
+        // worldTexture.generateMipmaps = false;
+        // worldTexture.wrapS = THREE.RepeatWrapping;
+        // worldTexture.wrapT = THREE.RepeatWrapping;
 
         const gltf = await this.gltfLoader.loadAsync('collision-world.glb');
         this.scene.add(gltf.scene);
@@ -73,6 +79,9 @@ export class World extends THREE.Object3D {
                 child.receiveShadow = true;
 
                 if (child.material.map) {
+                    // child.material.map = worldTexture;
+                    // child.material.map.flipY = false;
+                    // child.material.map.repeat.set(1, 1);
                     child.material.map.anisotropy = 4;
                 }
             }
