@@ -17,7 +17,7 @@ export class Player extends THREE.Object3D {
         this.gravity = gravity;
 
         this.rotation.order = 'YXZ';
-        this.position.z = 5;
+        this.position.z = 1;
         this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.camera.rotation.order = 'YXZ';
         this.add(this.camera);

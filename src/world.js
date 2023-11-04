@@ -7,94 +7,103 @@ export class World extends THREE.Object3D {
 
     worldOctree = new Octree();
 
-    constructor(scene, gui) {
+    constructor(gui) {
         super();
 
-        this.scene = scene;
         this.gui = gui;
 
-        const fillLight1 = new THREE.HemisphereLight(0x8dc1de, 0x00668d, 1.5);
-        fillLight1.position.set(2, 1, 1);
-        this.scene.add(fillLight1);
+        this.objectLoader = new THREE.ObjectLoader();
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 2.5);
-        directionalLight.position.set(- 5, 25, - 1);
-        directionalLight.castShadow = true;
-        directionalLight.shadow.camera.near = 0.01;
-        directionalLight.shadow.camera.far = 500;
-        directionalLight.shadow.camera.right = 30;
-        directionalLight.shadow.camera.left = - 30;
-        directionalLight.shadow.camera.top = 30;
-        directionalLight.shadow.camera.bottom = - 30;
-        directionalLight.shadow.mapSize.width = 1024;
-        directionalLight.shadow.mapSize.height = 1024;
-        directionalLight.shadow.radius = 4;
-        directionalLight.shadow.bias = - 0.00006;
-        this.scene.add(directionalLight);
+        // const fillLight1 = new THREE.HemisphereLight(0x8dc1de, 0x00668d, 1.5);
+        // fillLight1.position.set(2, 1, 1);
+        // this.scene.add(fillLight1);
 
-        this.scene.background = new THREE.Color(0x88ccee);
-        this.scene.fog = new THREE.Fog(0x88ccee, 0, 50);
+        // const directionalLight = new THREE.DirectionalLight(0xffffff, 2.5);
+        // directionalLight.position.set(- 5, 25, - 1);
+        // directionalLight.castShadow = true;
+        // directionalLight.shadow.camera.near = 0.01;
+        // directionalLight.shadow.camera.far = 500;
+        // directionalLight.shadow.camera.right = 30;
+        // directionalLight.shadow.camera.left = - 30;
+        // directionalLight.shadow.camera.top = 30;
+        // directionalLight.shadow.camera.bottom = - 30;
+        // directionalLight.shadow.mapSize.width = 1024;
+        // directionalLight.shadow.mapSize.height = 1024;
+        // directionalLight.shadow.radius = 4;
+        // directionalLight.shadow.bias = - 0.00006;
+        // this.scene.add(directionalLight);
 
-        this.textureLoader = new THREE.TextureLoader();
-        this.gltfLoader = new GLTFLoader();
-        this.gltfLoader.setPath('./models/gltf/');
+        // this.scene.background = new THREE.Color(0x88ccee);
+        // this.scene.fog = new THREE.Fog(0x88ccee, 0, 50);
+
+        // this.textureLoader = new THREE.TextureLoader();
+        // this.gltfLoader = new GLTFLoader();
+        // this.gltfLoader.setPath('./models/gltf/');
 
     }
 
-    async loadGeometry() {
-        // Create the panoramic sphere geometery
-        const panoSphereGeo = new THREE.SphereGeometry(32, 256, 256);
-        // Create the panoramic sphere material
-        const panoSphereMat = new THREE.MeshStandardMaterial({
-            side: THREE.BackSide,
-            displacementScale: - 4.0
-        });
-        // Create the panoramic sphere mesh
-        const sphere = new THREE.Mesh(panoSphereGeo, panoSphereMat);
-        this.scene.add(sphere);
+    async loadScene() {
 
-        const panoramicTexture = await this.textureLoader.loadAsync('./textures/kandao3.jpg')
-        panoramicTexture.colorSpace = THREE.SRGBColorSpace;
-        panoramicTexture.minFilter = THREE.NearestFilter;
-        panoramicTexture.generateMipmaps = false;
-        sphere.material.map = panoramicTexture;
-
-        const panoramicDepth = await this.textureLoader.loadAsync('./textures/kandao3_depthmap.jpg')
-        panoramicDepth.minFilter = THREE.NearestFilter;
-        panoramicDepth.generateMipmaps = false;
-        sphere.material.displacementMap = panoramicDepth;
-
-        // const worldTexture = await this.textureLoader.loadAsync('./textures/brick_bump.jpg')
-        // worldTexture.minFilter = THREE.NearestFilter;
-        // worldTexture.generateMipmaps = false;
-        // worldTexture.wrapS = THREE.RepeatWrapping;
-        // worldTexture.wrapT = THREE.RepeatWrapping;
-
-        const gltf = await this.gltfLoader.loadAsync('collision-world.glb');
-        this.scene.add(gltf.scene);
-        this.worldOctree.fromGraphNode(gltf.scene);
-        gltf.scene.traverse(child => {
-            if (child.isMesh) {
-                child.castShadow = true;
-                child.receiveShadow = true;
-
-                if (child.material.map) {
-                    // child.material.map = worldTexture;
-                    // child.material.map.flipY = false;
-                    // child.material.map.repeat.set(1, 1);
-                    child.material.map.anisotropy = 4;
-                }
-            }
-        });
+        const scene = await this.objectLoader.loadAsync('./models/scene.json');
+        this.worldOctree.fromGraphNode(scene);
 
         const helper = new OctreeHelper(this.worldOctree);
         helper.visible = false;
-        this.scene.add(helper);
+        scene.add(helper);
 
         this.gui.add({ debug: false }, 'debug')
             .onChange(function (value) {
                 helper.visible = value;
             });
+
+        return scene;
+
+        // // Create the panoramic sphere geometery
+        // const panoSphereGeo = new THREE.SphereGeometry(32, 256, 256);
+        // // Create the panoramic sphere material
+        // const panoSphereMat = new THREE.MeshStandardMaterial({
+        //     side: THREE.BackSide,
+        //     displacementScale: - 4.0
+        // });
+        // // Create the panoramic sphere mesh
+        // const sphere = new THREE.Mesh(panoSphereGeo, panoSphereMat);
+        // this.scene.add(sphere);
+
+        // const panoramicTexture = await this.textureLoader.loadAsync('./textures/kandao3.jpg')
+        // panoramicTexture.colorSpace = THREE.SRGBColorSpace;
+        // panoramicTexture.minFilter = THREE.NearestFilter;
+        // panoramicTexture.generateMipmaps = false;
+        // sphere.material.map = panoramicTexture;
+
+        // const panoramicDepth = await this.textureLoader.loadAsync('./textures/kandao3_depthmap.jpg')
+        // panoramicDepth.minFilter = THREE.NearestFilter;
+        // panoramicDepth.generateMipmaps = false;
+        // sphere.material.displacementMap = panoramicDepth;
+
+        // // const worldTexture = await this.textureLoader.loadAsync('./textures/brick_bump.jpg')
+        // // worldTexture.minFilter = THREE.NearestFilter;
+        // // worldTexture.generateMipmaps = false;
+        // // worldTexture.wrapS = THREE.RepeatWrapping;
+        // // worldTexture.wrapT = THREE.RepeatWrapping;
+
+        // const gltf = await this.gltfLoader.loadAsync('collision-world.glb');
+        // this.scene.add(gltf.scene);
+        // this.worldOctree.fromGraphNode(gltf.scene);
+        // gltf.scene.traverse(child => {
+        //     if (child.isMesh) {
+        //         child.castShadow = true;
+        //         child.receiveShadow = true;
+
+        //         if (child.material.map) {
+        //             // child.material.map = worldTexture;
+        //             // child.material.map.flipY = false;
+        //             // child.material.map.repeat.set(1, 1);
+        //             child.material.map.anisotropy = 4;
+        //         }
+        //     }
+        // });
+
+
     }
 
 }

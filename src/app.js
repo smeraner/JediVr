@@ -5,12 +5,22 @@ import { VRButton } from './three/addons/webxr/VRButton.js';
 import { XRControllerModelFactory } from './three/addons/webxr/XRControllerModelFactory.js';
 import { createText } from './three/addons/webxr/Text2D.js';
 
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
 import { Player } from './player.js';
 import { World } from './world.js';
 
 class App {
 
     GRAVITY = 9.8 * 3.5;;
+    BLOOM_SCENE = 1;
+
+    materials = {};
+    darkMaterial = new THREE.MeshBasicMaterial( { color: 'black' } );
 
     NUM_SPHERES = 100;
     SPHERE_RADIUS = 0.2;
@@ -91,18 +101,60 @@ class App {
      */
     async initScene() {
 
-        this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x505050);
+        //init world
+        this.world = new World(this.gui);
+        this.scene = await this.world.loadScene();
 
         //init player
         this.player = new Player(this.scene, this.GRAVITY);
         this.camera = this.player.getCamera();
 
-        //init world
-        this.world = new World(this.scene, this.gui);
-        await this.world.loadGeometry();
+        //debug add light saber to player
+        this.saber = this.buildLightSaber();
+        this.saber.position.set(0, -0.5,  -1.6);
+        this.saber.rotation.set(0, 1, 0);
+        this.scene.add(this.saber);
 
+        //init effect postprocessing
+        const bloomLayer = new THREE.Layers();
+        bloomLayer.set( this.BLOOM_SCENE );
+        this.bloomLayer = bloomLayer;
 
+        const renderScene = new RenderPass( this.scene, this.camera );
+
+        const bloomPass = new UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight ), 1.5, 0.4, 0.85 );
+        bloomPass.threshold = 0;
+        bloomPass.strength = 0.7;
+        bloomPass.radius = 0.05;
+
+        const bloomComposer = new EffectComposer( this.renderer );
+        bloomComposer.renderToScreen = false;
+        bloomComposer.addPass( renderScene );
+        bloomComposer.addPass( bloomPass );
+        this.bloomComposer = bloomComposer;
+
+        const mixPass = new ShaderPass(
+            new THREE.ShaderMaterial( {
+                uniforms: {
+                    baseTexture: { value: null },
+                    bloomTexture: { value: bloomComposer.renderTarget2.texture }
+                },
+                vertexShader: document.getElementById( 'vertexshader' ).textContent,
+                fragmentShader: document.getElementById( 'fragmentshader' ).textContent,
+                defines: {}
+            } ), 'baseTexture'
+        );
+        mixPass.needsSwap = true;
+
+        const outputPass = new OutputPass();
+
+        const finalComposer = new EffectComposer( this.renderer );
+        finalComposer.addPass( renderScene );
+        finalComposer.addPass( mixPass );
+        finalComposer.addPass( outputPass );
+        this.finalComposer = finalComposer;
+
+        //spehere init
         for (let i = 0; i < this.NUM_SPHERES; i++) {
             const sphere = new THREE.Mesh(this.sphereGeometry, this.sphereMaterial);
             sphere.castShadow = true;
@@ -153,7 +205,7 @@ class App {
         this.controller1 = this.renderer.xr.getController(0);
         this.controller1.addEventListener('connected', (e) => {
             this.controller1.gamepad = e.data.gamepad;
-            this.controller1.add( this.buildController( e.data ) );
+            this.controller1.add( this.buildLightSaber( e.data ) );
         });
         this.controller1.addEventListener('disconnected', (e) => {
             this.controller1.gamepad = null;
@@ -163,18 +215,18 @@ class App {
         this.controller2 = this.renderer.xr.getController(1);
         this.controller2.addEventListener('connected', (e) => {
             this.controller2.gamepad = e.data.gamepad;
-            this.controller2.add( this.buildController( e.data ) );
+            this.controller2.add( this.buildLightSaber( e.data ) );
         });
         this.controller2.addEventListener('disconnected', (e) => {
             this.controller2.gamepad = null;
             this.controller2.remove( this.controller2.children[0] );
         });
 
-        const controllerModelFactory = new XRControllerModelFactory();
-        this.controllerGrip1 = this.renderer.xr.getControllerGrip( 0 );
-        this.controllerGrip1.add( controllerModelFactory.createControllerModel( this.controllerGrip1 ) );
-        this.controllerGrip2 = this.renderer.xr.getControllerGrip( 1 );
-        this.controllerGrip2.add( controllerModelFactory.createControllerModel( this.controllerGrip2 ) );
+        // const controllerModelFactory = new XRControllerModelFactory();
+        // this.controllerGrip1 = this.renderer.xr.getControllerGrip( 0 );
+        // this.controllerGrip1.add( controllerModelFactory.createControllerModel( this.controllerGrip1 ) );
+        // this.controllerGrip2 = this.renderer.xr.getControllerGrip( 1 );
+        // this.controllerGrip2.add( controllerModelFactory.createControllerModel( this.controllerGrip2 ) );
 
         this.instructionText = createText( '', 0.04 );
 		this.instructionText.position.set( 0, 1.6, - 0.6 );
@@ -182,19 +234,38 @@ class App {
 
         this.player.add(this.controller1);
         this.player.add(this.controller2);
-        this.player.add(this.controllerGrip1);
-        this.player.add(this.controllerGrip2);
+        // this.player.add(this.controllerGrip1);
+        // this.player.add(this.controllerGrip2);
     }
 
-    buildController( data ) {
-        let geometry, material;
-        geometry = new THREE.BufferGeometry();
-        geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( [ 0, 0, 0, 0, 0, - 1 ], 3 ) );
-        geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( [ 0.5, 0.5, 0.5, 0, 0, 0 ], 3 ) );
+    buildLightSaber( data ) {
 
-        material = new THREE.LineBasicMaterial( { vertexColors: true, blending: THREE.AdditiveBlending } );
+        const saber = new THREE.Object3D();
 
-        return new THREE.Line( geometry, material );
+        const handleGeometry = new THREE.CylinderGeometry(0.03,0.03,0.3,8,1,false);
+        const handleMaterial = new THREE.MeshStandardMaterial({
+            color: 'grey',
+            flatShading: false,
+            });
+        const handle = new THREE.Mesh(handleGeometry, handleMaterial);
+
+        const bladeGeometry = new THREE.CylinderGeometry(0.03,0.03,1.3,8,1,false);
+        const bladeMaterial = new THREE.MeshStandardMaterial({
+            color: 'white',
+            emissive: 'white',
+            emissiveIntensity: 0.5,
+            flatShading: false,
+            });
+        const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
+        blade.layers.toggle( this.BLOOM_SCENE );
+        blade.position.set(0, 0.8, 0);
+
+        saber.add(handle);
+        saber.add(blade);
+        // geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( [ 0, 0, 0, 0, 0, - 1 ], 3 ) );
+        // geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( [ 0.5, 0.5, 0.5, 0, 0, 0 ], 3 ) );
+
+        return saber;
     }
 
 
@@ -461,7 +532,33 @@ class App {
 
         }
 
-        this.renderer.render(this.scene, this.camera);
+        this.render();
+    }
+
+    render() {
+
+        this.scene.traverse( this.darkenNonBloomed.bind(this) );
+        this.bloomComposer.render();
+        this.scene.traverse( this.restoreMaterial.bind(this) );
+
+        // render the entire scene, then render bloom scene on top
+        this.finalComposer.render();
+
+    }
+
+    darkenNonBloomed( obj ) {
+        if ( obj.isMesh && this.bloomLayer.test( obj.layers ) === false ) {
+            this.materials[ obj.uuid ] = obj.material;
+            obj.material = this.darkMaterial;
+        }
+    }
+
+    restoreMaterial( obj ) {
+        if ( this.materials[ obj.uuid ] ) {
+            obj.material = this.materials[ obj.uuid ];
+            delete this.materials[ obj.uuid ];
+        }
+
     }
 }
 
