@@ -28,7 +28,8 @@ class App {
     materials = {};
     darkMaterial = new THREE.MeshBasicMaterial( { color: 'black' } );
 
-    saberTemplate = null;
+    saberVertexShader = document.getElementById( 'vertexshader' ).textContent;
+    saberFragmentShader = document.getElementById( 'fragmentshader' ).textContent;
     saber1 = null;
     saber2 = null;
     saber1triggerReleased = true;
@@ -70,10 +71,6 @@ class App {
         this.setupXR();
         await this.initAudio();
 
-        const vertexShader = document.getElementById( 'vertexshader' ).textContent;
-        const fragmentShader = document.getElementById( 'fragmentshader' ).textContent;
-        this.saberTemplate = new Saber(this.BLOOM_SCENE, vertexShader, fragmentShader);
-
         //init audio on first click
         this.container.addEventListener('mousedown', async () => this.onFirstUserAction(), { once: true });
         this.renderer.xr.addEventListener('sessionstart', async () => this.onFirstUserAction(), { once: true });
@@ -114,7 +111,7 @@ class App {
         this.playAudio();
 
         //debug add light saber to player
-        this.saber = this.saberTemplate.clone();
+        this.saber = new Saber(this.BLOOM_SCENE, this.saberVertexShader, this.saberFragmentShader);
         await this.saber.initAudio(this.listener);
         this.saber.position.set(0, -0.5, -1.6);
         this.saber.on();
@@ -226,7 +223,7 @@ class App {
         this.controller1 = this.renderer.xr.getController(0);
         this.controller1.addEventListener('connected', (e) => {
             this.controller1.gamepad = e.data.gamepad;
-            this.saber1 = this.saberTemplate.clone();
+            this.saber1 = new Saber(this.BLOOM_SCENE, this.saberVertexShader, this.saberFragmentShader);
             this.controller1.add( this.saber1 );
         });
         this.controller1.addEventListener('disconnected', (e) => {
@@ -237,7 +234,7 @@ class App {
         this.controller2 = this.renderer.xr.getController(1);
         this.controller2.addEventListener('connected', (e) => {
             this.controller2.gamepad = e.data.gamepad;
-            this.saber2 = this.saberTemplate.clone();
+            this.saber2 = new Saber(this.BLOOM_SCENE, this.saberVertexShader, this.saberFragmentShader);
             this.controller2.add( this.saber2 );
         });
         this.controller2.addEventListener('disconnected', (e) => {
