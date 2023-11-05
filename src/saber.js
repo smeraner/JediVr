@@ -18,6 +18,8 @@ export class Saber extends THREE.Object3D {
             emissive: 'white',
             emissiveIntensity: 0.5,
             flatShading: false,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
         });
         const blade = new THREE.Mesh(bladeGeometry, bladeMaterial);
         blade.layers.toggle(bloom_scene);

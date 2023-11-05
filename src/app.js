@@ -20,13 +20,17 @@ class App {
     GRAVITY = 9.8 * 3.5;;
     BLOOM_SCENE = 1;
 
-    materials = {};
-    darkMaterial = new THREE.MeshBasicMaterial( { color: 'black' } );
-
     NUM_SPHERES = 100;
     SPHERE_RADIUS = 0.2;
 
     STEPS_PER_FRAME = 5;
+
+    materials = {};
+    darkMaterial = new THREE.MeshBasicMaterial( { color: 'black' } );
+    saber1 = null;
+    saber2 = null;
+    saber1triggerReleased = true;
+    saber2triggerReleased = true;
 
     sphereGeometry = new THREE.IcosahedronGeometry(this.SPHERE_RADIUS, 5);
     sphereMaterial = new THREE.MeshLambertMaterial({ color: 0xdede8d });
@@ -65,16 +69,8 @@ class App {
         await this.initAudio();
 
         //init audio on first click
-        this.container.addEventListener('mousedown', () => {
-            this.playAudio();
-            
-            //debug add light saber to player
-            this.saber = this.buildLightSaber();
-            this.saber.position.set(0, -0.5,  -1.6);
-            this.saber.on();
-            this.scene.add(this.saber);
-
-        }, { once: true });
+        this.container.addEventListener('mousedown', () => this.onFirstUserAction(), { once: true });
+        this.renderer.xr.addEventListener('sessionstart', () => this.onFirstUserAction(), { once: true });
         
         window.addEventListener('resize', this.resize.bind(this));
         document.addEventListener('keydown', (event) => {
@@ -102,6 +98,20 @@ class App {
         });
 
         this.renderer.setAnimationLoop(this.animate.bind(this));
+    }
+
+    /**
+     * Executes actions when the user performs their first interaction.
+     * Plays audio and adds a light saber to the player's scene.
+     */
+    onFirstUserAction() {
+        this.playAudio();
+
+        //debug add light saber to player
+        this.saber = this.buildLightSaber();
+        this.saber.position.set(0, -0.5, -1.6);
+        this.saber.on();
+        this.scene.add(this.saber);
     }
 
     /***
@@ -438,8 +448,11 @@ class App {
             //     this.throwBall();
             // }
 
-            if(this.controller1.gamepad.buttons[0].pressed) {
+            if(this.controller1.gamepad.buttons[0].pressed && this.saber1triggerReleased) {
                 this.saber1.toggle();
+                this.saber1triggerReleased = false;
+            } else if(!this.controller1.gamepad.buttons[0].pressed) {
+                this.saber1triggerReleased = true;
             }
 
             //jump
@@ -463,8 +476,11 @@ class App {
             // }
             // this.updateInstructionText(debugText);
 
-            if(this.controller2.gamepad.buttons[0].pressed) {
+            if(this.controller2.gamepad.buttons[0].pressed && this.saber2triggerReleased) {
                 this.saber2.toggle();
+                this.saber2triggerReleased = false;
+            } else if(!this.controller2.gamepad.buttons[0].pressed) {
+                this.saber2triggerReleased = true;
             }
 
             if(this.controller2.gamepad.axes[2] > 0.2) {
