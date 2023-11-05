@@ -2,14 +2,13 @@ import * as THREE from './three/three.module.js';
 
 import { GUI } from './three/addons/libs/lil-gui.module.min.js';
 import { VRButton } from './three/addons/webxr/VRButton.js';
-import { XRControllerModelFactory } from './three/addons/webxr/XRControllerModelFactory.js';
 import { createText } from './three/addons/webxr/Text2D.js';
 
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+// import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+// import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+// import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+// import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+// import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 import { Player } from './player.js';
 import { World } from './world.js';
@@ -89,9 +88,9 @@ class App {
             this.mouseTime = performance.now();
         });
 
-        document.addEventListener('mouseup', () => {
-            if (document.pointerLockElement !== null) this.throwBall();
-        });
+        // document.addEventListener('mouseup', () => {
+        //     if (document.pointerLockElement !== null) this.throwBall();
+        // });
 
         document.body.addEventListener('mousemove', (event) => {
             if (document.pointerLockElement === document.body) {
@@ -116,6 +115,7 @@ class App {
         this.saber.position.set(0, -0.5, -1.6);
         this.saber.on();
         this.scene.add(this.saber);
+
     }
 
     /***
@@ -224,6 +224,7 @@ class App {
         this.controller1.addEventListener('connected', (e) => {
             this.controller1.gamepad = e.data.gamepad;
             this.saber1 = new Saber(this.BLOOM_SCENE, this.saberVertexShader, this.saberFragmentShader);
+            this.saber1.initAudio(this.listener);
             this.controller1.add( this.saber1 );
         });
         this.controller1.addEventListener('disconnected', (e) => {
@@ -235,6 +236,7 @@ class App {
         this.controller2.addEventListener('connected', (e) => {
             this.controller2.gamepad = e.data.gamepad;
             this.saber2 = new Saber(this.BLOOM_SCENE, this.saberVertexShader, this.saberFragmentShader);
+            this.saber2.initAudio(this.listener);
             this.controller2.add( this.saber2 );
         });
         this.controller2.addEventListener('disconnected', (e) => {
