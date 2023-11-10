@@ -47,6 +47,28 @@ export class World extends THREE.Object3D {
         const scene = await this.objectLoader.loadAsync('./models/scene.json');
         this.worldOctree.fromGraphNode(scene);
 
+        //find object with name "Hemisphere" and change material to repeat
+        scene.traverse(child => {
+            if (child.isMesh && child.name === "Hemisphere") {
+
+                [child.material.map,child.material.lightMap].forEach(map => {
+                    if (map) {
+                        map.wrapS = THREE.RepeatWrapping;
+                        map.wrapT = THREE.RepeatWrapping;
+                        map.repeat.set(2, 2);
+                        map.anisotropy = 4;
+                    }
+                });
+
+            } 
+            // else if (child.isMesh && child.name === "collision-world.glb") {
+            //     if (child.material.map) {
+            //         child.material.map.anisotropy = 4;
+            //     }
+                
+            // }
+        });
+
         const helper = new OctreeHelper(this.worldOctree);
         helper.visible = false;
         scene.add(helper);
