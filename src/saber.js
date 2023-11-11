@@ -4,12 +4,20 @@ export class Saber extends THREE.Object3D {
 
     static soundBufferHumming = null;
     static soundBufferInit = null;
-    static #staticConstructorDummyResult = (function() {
+    static #staticConstructorDummyResult = (function () {
         //load audio     
         const audioLoader = new THREE.AudioLoader();
-        Saber.soundBufferHumming = audioLoader.loadAsync( './sounds/saber-humming.ogg');
-        Saber.soundBufferInit = audioLoader.loadAsync( './sounds/saber-init.ogg');
-      })()
+        Saber.soundBufferHumming = audioLoader.loadAsync('./sounds/saber-humming.ogg');
+        Saber.soundBufferInit = audioLoader.loadAsync('./sounds/saber-init.ogg');
+    })()
+
+    static ANIMATIONS = {
+        NO: 0,
+        SWING: 1,
+        SWING_BACK: 2,
+    }
+
+    animation = Saber.ANIMATIONS.NO;
 
     /**
      * @param {THREE.Scene} bloom_scene
@@ -38,7 +46,7 @@ export class Saber extends THREE.Object3D {
             flatShading: false,
             side: THREE.DoubleSide,
         });
-        const bladeMesh = new THREE.Mesh(bladeGeometry, bladeMaterial);       
+        const bladeMesh = new THREE.Mesh(bladeGeometry, bladeMaterial);
         bladeMesh.position.set(0, 0.8, 0);
         blade.add(bladeMesh);
 
@@ -58,10 +66,10 @@ export class Saber extends THREE.Object3D {
         bladeGlowMesh2.position.set(0, 0.8, 0);
         blade.add(bladeGlowMesh2);
 
-        const light = new THREE.PointLight( saberColor, 1, 100 );
+        const light = new THREE.PointLight(saberColor, 1, 100);
         light.position.set(0, 0.8, 0);
         blade.add(light);
-        
+
         this.blade = blade;
 
         this.add(handle);
@@ -72,8 +80,8 @@ export class Saber extends THREE.Object3D {
     async initAudio(audioListener) {
         const bufferHumming = await Saber.soundBufferHumming;
         const soundHumming = new THREE.PositionalAudio(audioListener);
-        soundHumming.setBuffer( bufferHumming );
-        soundHumming.setRefDistance( 0.2 );
+        soundHumming.setBuffer(bufferHumming);
+        soundHumming.setRefDistance(0.2);
         soundHumming.setLoop(true);
         soundHumming.setVolume(0.5);
         this.blade.add(soundHumming);
@@ -81,8 +89,8 @@ export class Saber extends THREE.Object3D {
 
         const bufferInit = await Saber.soundBufferInit;
         const soundInit = new THREE.PositionalAudio(audioListener);
-        soundInit.setBuffer( bufferInit );
-        soundInit.setRefDistance( 0.2 );
+        soundInit.setBuffer(bufferInit);
+        soundInit.setRefDistance(0.2);
         soundInit.setLoop(false);
         this.handle.add(soundInit);
         this.soundInit = soundInit;
@@ -90,25 +98,66 @@ export class Saber extends THREE.Object3D {
 
     on() {
         this.blade.visible = true;
-        if(this.soundInit) this.soundInit.play();
-        if(this.soundHumming) this.soundHumming.play();
+        if (this.soundInit) this.soundInit.play();
+        if (this.soundHumming) this.soundHumming.play();
     }
 
     off() {
         this.blade.visible = false;
-        if(this.soundHumming) this.soundHumming.stop();
-        if(this.soundInit) this.soundInit.stop();
+        if (this.soundHumming) this.soundHumming.stop();
+        if (this.soundInit) this.soundInit.stop();
     }
 
     toggle() {
         this.blade.visible = !this.blade.visible;
         if (this.blade.visible) {
-            if(this.soundInit) this.soundInit.play();
-            if(this.soundHumming) this.soundHumming.play();
+            if (this.soundInit) this.soundInit.play();
+            if (this.soundHumming) this.soundHumming.play();
         } else {
-            if(this.soundHumming) this.soundHumming.stop();
-            if(this.soundInit) this.soundInit.stop();
+            if (this.soundHumming) this.soundHumming.stop();
+            if (this.soundInit) this.soundInit.stop();
         }
+    }
+
+    setInitialRotation(x, y, z) {
+        this.initalRotationX = x;
+        this.initalRotationY = y;
+        this.initalRotationZ = z;
+        this.rotation.set(x, y, z);
+    }
+
+    swing() {
+        this.animation = Saber.ANIMATIONS.SWING;
+    }
+
+    animate(deltaTime) {
+        if (this.blade.visible) {
+            this.blade.rotation.y += deltaTime * 0.5;
+        }
+
+        const maxSpeed = 20;
+        if(this.animation == Saber.ANIMATIONS.SWING) {
+            //swing animation with start and end, end same position as start
+            //calculate speed based on z rotation, start fast, end slow
+            const speed = maxSpeed * Math.max(0.5, Math.min(1, this.rotation.z / 2));
+
+            this.rotation.z += deltaTime * speed;
+            this.rotation.x -= deltaTime * speed * 0.5;
+            if (this.rotation.z >= 1) {
+                this.animation = Saber.ANIMATIONS.SWING_BACK;
+            }
+        } else if (this.animation == Saber.ANIMATIONS.SWING_BACK) {
+            const speed = maxSpeed * Math.max(0.1, Math.min(1, this.rotation.z / 2));
+
+            this.rotation.z -= deltaTime * speed;
+            this.rotation.x += deltaTime * speed * 0.5;
+            if (this.rotation.z <= this.initalRotationZ) {
+                this.rotation.z = this.initalRotationZ
+                this.rotation.x = this.initalRotationX
+                this.animation = Saber.ANIMATIONS.NO;
+            }
+        }
+
     }
 
 }

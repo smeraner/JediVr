@@ -81,7 +81,7 @@ class App {
         await this.initAudio();
 
         //init audio on first click
-        document.addEventListener('mousedown', async () => this.onFirstUserAction(), { once: true });
+        document.addEventListener('mouseup', async () => this.onFirstUserAction(), { once: true });
         this.renderer.xr.addEventListener('sessionstart', async () => this.onFirstUserAction(), { once: true });
         
         window.addEventListener('resize', this.resize.bind(this));
@@ -125,9 +125,13 @@ class App {
             await this.saber.initAudio(this.listener);
             this.saber.on();
             this.saber.position.set(0, -0.2, -0.8);
+            this.saber.setInitialRotation(-Math.PI / 4, 0, -0.7);
             this.player.add(this.saber);
 
-            document.addEventListener('mouseup', async (e) => {if(e.button===2)this.saber.toggle()});
+            document.addEventListener('mouseup', async (e) => {
+                if(e.button===2)this.saber.toggle();
+                if(e.button===0)this.saber.swing();
+            });
         }
 
     }
@@ -541,6 +545,7 @@ class App {
             this.controls(deltaTime);
 
             this.player.updatePlayer(deltaTime, this.world);
+            if(this.saber) this.saber.animate(deltaTime);
 
             this.updateSpheres(deltaTime);
 
