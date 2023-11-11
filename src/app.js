@@ -4,11 +4,13 @@ import { GUI } from './three/addons/libs/lil-gui.module.min.js';
 import { VRButton } from './three/addons/webxr/VRButton.js';
 import { createText } from './three/addons/webxr/Text2D.js';
 
-// import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-// import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-// import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-// import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-// import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+// import {
+//     BloomEffect
+// } from "./postprocessing/index.min.js";
+
+// import { EffectComposerXR } from "./postprocessing/EffectComposerXR.js";
+// import { EffectPassXR } from "./postprocessing/EffectPassXR.js";
+// import { RenderPassXR } from "./postprocessing/RenderPassXR.js";
 
 import { Player } from './player.js';
 import { World } from './world.js';
@@ -27,8 +29,6 @@ class App {
     materials = {};
     darkMaterial = new THREE.MeshBasicMaterial( { color: 'black' } );
 
-    saberVertexShader = document.getElementById( 'vertexshader' ).textContent;
-    saberFragmentShader = document.getElementById( 'fragmentshader' ).textContent;
     saber1 = null;
     saber2 = null;
     saber1triggerReleased = true;
@@ -54,7 +54,9 @@ class App {
         this.container = document.createElement('div');
         document.body.appendChild(this.container);
 
-        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer = new THREE.WebGLRenderer({
+            antialias: true,
+        });
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.shadowMap.enabled = true;
@@ -63,15 +65,23 @@ class App {
         this.container.appendChild(this.renderer.domElement);
         document.body.appendChild(VRButton.createButton(this.renderer));
 
+        // // Create the effect composer.
+        // this.composer = new EffectComposerXR(this.renderer, {
+        //     //frameBufferType: HalfFloatType
+        // });
+
     }
 
     async init() {
         await this.initScene();
+        // this.composer.addPass(new RenderPassXR(this.scene, this.camera));
+        // this.composer.addPass(new EffectPassXR(this.camera, new BloomEffect()));
+
         this.setupXR();
         await this.initAudio();
 
         //init audio on first click
-        this.container.addEventListener('mousedown', async () => this.onFirstUserAction(), { once: true });
+        document.addEventListener('mousedown', async () => this.onFirstUserAction(), { once: true });
         this.renderer.xr.addEventListener('sessionstart', async () => this.onFirstUserAction(), { once: true });
         
         window.addEventListener('resize', this.resize.bind(this));
@@ -110,11 +120,15 @@ class App {
         this.playAudio();
 
         //debug add light saber to player
-        this.saber = new Saber(this.BLOOM_SCENE, this.saberVertexShader, this.saberFragmentShader);
-        await this.saber.initAudio(this.listener);
-        this.saber.position.set(0, -0.5, -1.6);
-        this.saber.on();
-        this.scene.add(this.saber);
+        if(!this.renderer.xr.isPresenting) {
+            this.saber = new Saber(this.BLOOM_SCENE);
+            await this.saber.initAudio(this.listener);
+
+            this.saber.position.set(0, -0.2, -0.8);
+            this.player.add(this.saber);
+
+            document.addEventListener('mouseup', async () => this.saber.toggle());
+        }
 
     }
 
@@ -534,36 +548,11 @@ class App {
 
         }
 
+        //this.composer.render(deltaTime);
+
         this.renderer.render(this.scene, this.camera);
-
-        //this.render();
     }
 
-    render() {
-
-        this.scene.traverse( this.darkenNonBloomed.bind(this) );
-        this.bloomComposer.render();
-        this.scene.traverse( this.restoreMaterial.bind(this) );
-
-        // render the entire scene, then render bloom scene on top
-        this.finalComposer.render();
-
-    }
-
-    darkenNonBloomed( obj ) {
-        if ( obj.isMesh && this.bloomLayer.test( obj.layers ) === false ) {
-            this.materials[ obj.uuid ] = obj.material;
-            obj.material = this.darkMaterial;
-        }
-    }
-
-    restoreMaterial( obj ) {
-        if ( this.materials[ obj.uuid ] ) {
-            obj.material = this.materials[ obj.uuid ];
-            delete this.materials[ obj.uuid ];
-        }
-
-    }
 }
 
 

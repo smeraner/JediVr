@@ -1,12 +1,18 @@
 import * as THREE from './three/three.module.js';
 
 export class Saber extends THREE.Object3D {
-    constructor(bloom_scene, vertexShader, fragmentShader) {
+    /**
+     * @param {THREE.Scene} bloom_scene
+     * @param {String} saberColor white, red or limegreen
+     */
+    constructor(bloom_scene, saberColor = 0xff0000) {
         super();
 
         const handleGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.3, 8, 1, false);
         const handleMaterial = new THREE.MeshStandardMaterial({
             color: 'grey',
+            metalness: 0.5,
+            roughness: 0.5,
             flatShading: false,
         });
         const handle = new THREE.Mesh(handleGeometry, handleMaterial);
@@ -16,105 +22,37 @@ export class Saber extends THREE.Object3D {
         blade.visible = false;
         const bladeGeometry = new THREE.CylinderGeometry(0.02, 0.02, 1.3, 8, 1, false);
         const bladeMaterial = new THREE.MeshStandardMaterial({
-            color: 'white',
-            emissive: 'white',
+            color: saberColor,
+            emissive: saberColor,
             emissiveIntensity: 1,
             flatShading: false,
+            side: THREE.DoubleSide,
         });
-        const bladeMesh = new THREE.Mesh(bladeGeometry, bladeMaterial);
-        //bladeMesh.layers.toggle(bloom_scene);
+        const bladeMesh = new THREE.Mesh(bladeGeometry, bladeMaterial);       
         bladeMesh.position.set(0, 0.8, 0);
         blade.add(bladeMesh);
-        
-        // create custom material from the shader code above
-	    //   that is within specially labeled script tags
-	    var customMaterial = new THREE.ShaderMaterial( 
-        {
-            uniforms: 
-            { 
-                "c":   { type: "f", value: 1.0 },
-                "p":   { type: "f", value: 1.4 },
-                glowColor: { type: "c", value: new THREE.Color(0xffff00) },
-                viewVector: { type: "v3", value: new THREE.Vector3(0,0,0) }
-            },
-            vertexShader:  vertexShader,
-            fragmentShader: fragmentShader,
-            side: THREE.BackSide,
-            blending: THREE.AdditiveBlending,
-            //transparent: true,
-        });
 
-            
-        const bladeGlow = new THREE.Mesh( bladeGeometry, customMaterial );
-        bladeGlow.position.set(0, 0.8, 0);
-        bladeGlow.scale.x = bladeGlow.scale.z = 1.9;
-        blade.add(bladeGlow);
+        const bladeGlowGeometry = new THREE.CylinderGeometry(0.027, 0.027, 1.3, 8, 1, false);
+        const bladeGlowMaterial = new THREE.MeshBasicMaterial({
+            color: saberColor,
+            transparent: true,
+            opacity: 0.15,
+            side: THREE.DoubleSide,
+        });
+        const bladeGlowMesh = new THREE.Mesh(bladeGlowGeometry, bladeGlowMaterial);
+        bladeGlowMesh.position.set(0, 0.8, 0);
+        blade.add(bladeGlowMesh);
+
+        const bladeGlowGeometry2 = new THREE.CylinderGeometry(0.035, 0.035, 1.3, 8, 1, false);
+        const bladeGlowMesh2 = new THREE.Mesh(bladeGlowGeometry2, bladeGlowMaterial);
+        bladeGlowMesh2.position.set(0, 0.8, 0);
+        blade.add(bladeGlowMesh2);
+
+        const light = new THREE.PointLight( saberColor, 1, 100 );
+        light.position.set(0, 0.8, 0);
+        blade.add(light);
+        
         this.blade = blade;
-
-        //gui debug
-        const gui = app.gui;
-        const parameters = 
-        { c: 1.0, p: 1.4, bs: false, fs: true, nb: false, ab: true, mv: true, color: "#ffff00" };
-        
-        var top = gui.addFolder('Glow Shader Attributes');
-        
-        var cGUI = top.add( parameters, 'c' ).min(0.0).max(1.0).step(0.01).name("c").listen();
-        cGUI.onChange( function(value) { 
-            bladeGlow.material.uniforms[ "c" ].value = parameters.c; 
-        });
-        
-        var pGUI = top.add( parameters, 'p' ).min(0.0).max(6.0).step(0.01).name("p").listen();
-        pGUI.onChange( function(value) { 
-            bladeGlow.material.uniforms[ "p" ].value = parameters.p; 
-        });
-    
-        var glowColor = top.addColor( parameters, 'color' ).name('Glow Color').listen();
-        glowColor.onChange( function(value) {
-            bladeGlow.material.uniforms.glowColor.value.setHex( value.replace("#", "0x"));   
-        });
-        top.open();
-        
-        // toggle front side / back side 
-        var folder1 = gui.addFolder('Render side');
-        var fsGUI = folder1.add( parameters, 'fs' ).name("THREE.FrontSide").listen();
-        fsGUI.onChange( function(value) { 
-            if (value) 
-            {
-                bsGUI.setValue(false);
-                bladeGlow.material.side = THREE.FrontSide;   
-            }
-        });
-        var bsGUI = folder1.add( parameters, 'bs' ).name("THREE.BackSide").listen();
-        bsGUI.onChange( function(value) { 
-            if (value)
-            {
-                fsGUI.setValue(false);
-                bladeGlow.material.side = THREE.BackSide;  
-            }
-        });
-        folder1.open();
-        
-        // toggle normal blending / additive blending
-        var folder2 = gui.addFolder('Blending style');
-        var nbGUI = folder2.add( parameters, 'nb' ).name("THREE.NormalBlending").listen();
-        nbGUI.onChange( function(value) { 
-            if (value) 
-            {
-                abGUI.setValue(false);
-                bladeGlow.material.blending = THREE.NormalBlending;  
-            }
-        });
-        var abGUI = folder2.add( parameters, 'ab' ).name("THREE.AdditiveBlending").listen();
-        abGUI.onChange( function(value) { 
-            if (value)
-            {
-                nbGUI.setValue(false);
-                bladeGlow.material.blending = THREE.AdditiveBlending; 
-            }
-        });
-        folder2.open();
-    
-
 
         this.add(handle);
         this.add(blade);

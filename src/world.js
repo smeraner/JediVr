@@ -57,6 +57,8 @@ export class World extends THREE.Object3D {
                         map.wrapT = THREE.RepeatWrapping;
                         map.repeat.set(2, 2);
                         map.anisotropy = 4;
+                        map.roughness = 1;
+                        map.metalness = 0;
                     }
                 });
 
