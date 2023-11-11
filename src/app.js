@@ -123,11 +123,11 @@ class App {
         if(!this.renderer.xr.isPresenting) {
             this.saber = new Saber(this.BLOOM_SCENE);
             await this.saber.initAudio(this.listener);
-
+            this.saber.on();
             this.saber.position.set(0, -0.2, -0.8);
             this.player.add(this.saber);
 
-            document.addEventListener('mouseup', async () => this.saber.toggle());
+            document.addEventListener('mouseup', async (e) => {if(e.button===2)this.saber.toggle()});
         }
 
     }
