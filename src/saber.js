@@ -1,6 +1,16 @@
 import * as THREE from './three/three.module.js';
 
 export class Saber extends THREE.Object3D {
+
+    static soundBufferHumming = null;
+    static soundBufferInit = null;
+    static #staticConstructorDummyResult = (function() {
+        //load audio     
+        const audioLoader = new THREE.AudioLoader();
+        Saber.soundBufferHumming = audioLoader.loadAsync( './sounds/saber-humming.ogg');
+        Saber.soundBufferInit = audioLoader.loadAsync( './sounds/saber-init.ogg');
+      })()
+
     /**
      * @param {THREE.Scene} bloom_scene
      * @param {String} saberColor white, red or limegreen
@@ -57,39 +67,47 @@ export class Saber extends THREE.Object3D {
         this.add(handle);
         this.add(blade);
         this.rotation.x = -Math.PI / 4;
-
-        //load audio     
-        const audioLoader = new THREE.AudioLoader();
-        this.soundBufferHumming = audioLoader.loadAsync( './sounds/saber-humming.ogg');
     }
 
     async initAudio(audioListener) {
-        const buffer = await this.soundBufferHumming;
-        const sound = new THREE.PositionalAudio(audioListener);
-        sound.setBuffer( buffer );
-        sound.setRefDistance( 0.2 );
-        sound.setLoop(true);
-        this.blade.add(sound);
-        this.sound = sound;
+        const bufferHumming = await Saber.soundBufferHumming;
+        const soundHumming = new THREE.PositionalAudio(audioListener);
+        soundHumming.setBuffer( bufferHumming );
+        soundHumming.setRefDistance( 0.2 );
+        soundHumming.setLoop(true);
+        soundHumming.setVolume(0.5);
+        this.blade.add(soundHumming);
+        this.soundHumming = soundHumming;
+
+        const bufferInit = await Saber.soundBufferInit;
+        const soundInit = new THREE.PositionalAudio(audioListener);
+        soundInit.setBuffer( bufferInit );
+        soundInit.setRefDistance( 0.2 );
+        soundInit.setLoop(false);
+        this.handle.add(soundInit);
+        this.soundInit = soundInit;
     }
 
     on() {
         this.blade.visible = true;
-        if(this.sound) this.sound.play();
+        if(this.soundInit) this.soundInit.play();
+        if(this.soundHumming) this.soundHumming.play();
     }
 
     off() {
         this.blade.visible = false;
-        if(this.sound) this.sound.stop();
+        if(this.soundHumming) this.soundHumming.stop();
+        if(this.soundInit) this.soundInit.stop();
     }
 
     toggle() {
         this.blade.visible = !this.blade.visible;
-        if (!this.sound) return;
         if (this.blade.visible) {
-            this.sound.play();
+            if(this.soundInit) this.soundInit.play();
+            if(this.soundHumming) this.soundHumming.play();
         } else {
-            this.sound.stop();
+            if(this.soundHumming) this.soundHumming.stop();
+            if(this.soundInit) this.soundInit.stop();
         }
     }
 
