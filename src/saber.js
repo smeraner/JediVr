@@ -4,11 +4,13 @@ export class Saber extends THREE.Object3D {
 
     static soundBufferHumming = null;
     static soundBufferInit = null;
+    static soundBufferSwing = null;
     static #staticConstructorDummyResult = (function () {
         //load audio     
         const audioLoader = new THREE.AudioLoader();
         Saber.soundBufferHumming = audioLoader.loadAsync('./sounds/saber-humming.ogg');
         Saber.soundBufferInit = audioLoader.loadAsync('./sounds/saber-init.ogg');
+        Saber.soundBufferSwing = audioLoader.loadAsync('./sounds/saber-swing.ogg');
     })()
 
     static ANIMATIONS = {
@@ -94,6 +96,14 @@ export class Saber extends THREE.Object3D {
         soundInit.setLoop(false);
         this.handle.add(soundInit);
         this.soundInit = soundInit;
+
+        const bufferSwing = await Saber.soundBufferSwing;
+        const soundSwing = new THREE.PositionalAudio(audioListener);
+        soundSwing.setBuffer(bufferSwing);
+        soundSwing.setRefDistance(0.2);
+        soundSwing.setLoop(false);
+        this.blade.add(soundSwing);
+        this.soundSwing = soundSwing;
     }
 
     on() {
@@ -128,6 +138,7 @@ export class Saber extends THREE.Object3D {
 
     swing() {
         this.animation = Saber.ANIMATIONS.SWING;
+        if (this.soundSwing) this.soundSwing.play();
     }
 
     animate(deltaTime) {

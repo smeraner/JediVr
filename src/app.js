@@ -82,6 +82,7 @@ class App {
 
         //init audio on first click
         document.addEventListener('mouseup', async () => this.onFirstUserAction(), { once: true });
+        window.addEventListener('blur', async () => this.stopAudio(), { once: true });
         this.renderer.xr.addEventListener('sessionstart', async () => this.onFirstUserAction(), { once: true });
         
         window.addEventListener('resize', this.resize.bind(this));
