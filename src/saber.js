@@ -138,7 +138,7 @@ export class Saber extends THREE.Object3D {
 
     swing() {
         this.animation = Saber.ANIMATIONS.SWING;
-        if (this.soundSwing) this.soundSwing.play();
+        if (this.soundSwing && this.blade.visible===true) this.soundSwing.play();
     }
 
     animate(deltaTime) {

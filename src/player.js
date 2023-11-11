@@ -5,7 +5,7 @@ export class Player extends THREE.Object3D {
     gravity = 0;
     playerOnFloor = false;
 
-    playerCollider = new Capsule(new THREE.Vector3(0, 0.35, 0), new THREE.Vector3(0, 1, 0), 0.35);
+    playerCollider = new Capsule(new THREE.Vector3(0, 0.35, 0), new THREE.Vector3(0, 1, 0), 0.7);
 
     playerVelocity = new THREE.Vector3();
     playerDirection = new THREE.Vector3();

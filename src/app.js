@@ -125,7 +125,7 @@ class App {
             this.saber = new Saber(this.BLOOM_SCENE);
             await this.saber.initAudio(this.listener);
             this.saber.on();
-            this.saber.position.set(0, -0.2, -0.8);
+            this.saber.position.set(0, -0.2, -0.6);
             this.saber.setInitialRotation(-Math.PI / 4, 0, -0.7);
             this.player.add(this.saber);
 
