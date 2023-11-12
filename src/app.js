@@ -15,6 +15,7 @@ import { createText } from './three/addons/webxr/Text2D.js';
 import { Player } from './player.js';
 import { World } from './world.js';
 import { Saber } from './saber.js';
+import { Trooper } from './trooper.js';
 
 class App {
 
@@ -37,6 +38,7 @@ class App {
     sphereGeometry = new THREE.IcosahedronGeometry(this.SPHERE_RADIUS, 5);
     sphereMaterial = new THREE.MeshLambertMaterial({ color: 0xdede8d });
 
+    enemys = [];
     spheres = [];
     sphereIdx = 0;
 
@@ -119,22 +121,7 @@ class App {
      */
     async onFirstUserAction() {
         //this.playAudio();
-
-        //debug add light saber to player
-        if(!this.renderer.xr.isPresenting) {
-            this.saber = new Saber(this.BLOOM_SCENE);
-            await this.saber.initAudio(this.listener);
-            this.saber.on();
-            this.saber.position.set(0, -0.2, -0.6);
-            this.saber.setInitialRotation(-Math.PI / 4, 0, -0.7);
-            this.player.add(this.saber);
-
-            document.addEventListener('mouseup', async (e) => {
-                if(e.button===2)this.saber.toggle();
-                if(e.button===0)this.saber.swing();
-            });
-        }
-
+        await this.saber.initAudio(this.listener);
     }
 
     /***
@@ -149,6 +136,26 @@ class App {
         //init player
         this.player = new Player(this.scene, this.GRAVITY);
         this.camera = this.player.getCamera();
+
+        //init trooper
+        const trooper = new Trooper(this.scene, this.GRAVITY);
+        trooper.rotation.set(0, Math.PI, 0)
+        trooper.position.set(1.6, -1.6, -7);
+        this.enemys.push(trooper);
+
+        //init saber
+        //debug add light saber to player
+        if(!this.renderer.xr.isPresenting) {
+            this.saber = new Saber(this.BLOOM_SCENE);
+            this.saber.position.set(0, -0.2, -0.6);
+            this.saber.setInitialRotation(-Math.PI / 4, 0, -0.7);
+            this.player.add(this.saber);
+
+            document.addEventListener('mouseup', async (e) => {
+                if(e.button===2)this.saber.toggle();
+                if(e.button===0)this.saber.swing();
+            });
+        }
 
         //init effect postprocessing
         /*
@@ -547,6 +554,10 @@ class App {
 
             this.player.updatePlayer(deltaTime, this.world);
             if(this.saber) this.saber.animate(deltaTime);
+
+            this.enemys.forEach(enemy => {
+                enemy.animate(deltaTime);
+            });
 
             this.updateSpheres(deltaTime);
 
