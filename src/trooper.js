@@ -8,12 +8,12 @@ import { Capsule } from './three/addons/math/Capsule.js';
  */
 export class Trooper extends THREE.Object3D {
     gravity = 0;
-    playerOnFloor = false;
+    onFloor = false;
 
-    playerCollider = new Capsule(new THREE.Vector3(0, 0.35, 0), new THREE.Vector3(0, 1, 0), 0.7);
+    collider = new Capsule(new THREE.Vector3(0, -0.5, 0), new THREE.Vector3(0, 1, 0), 0.1);
 
-    trooperVelocity = new THREE.Vector3();
-    trooperDirection = new THREE.Vector3();
+    velocity = new THREE.Vector3();
+    direction = new THREE.Vector3();
 
     static trooperModel = null;
     static #staticConstructorDummyResult = (function () {
@@ -40,33 +40,72 @@ export class Trooper extends THREE.Object3D {
             const model = gltf.scene;
             this.add(model);
             const animations = gltf.animations;
-            this.mixer = new THREE.AnimationMixer( model );
+            this.mixer = new THREE.AnimationMixer(model);
 
-            this.idleAction = this.mixer.clipAction( animations[ 0 ] );
-            this.walkAction = this.mixer.clipAction( animations[ 3 ] );
-			this.runAction = this.mixer.clipAction( animations[ 1 ] );
+            this.idleAction = this.mixer.clipAction(animations[0]);
+            this.walkAction = this.mixer.clipAction(animations[3]);
+            this.runAction = this.mixer.clipAction(animations[1]);
 
-            this.actions = [ this.idleAction, this.walkAction, this.runAction ];
+            this.actions = [this.idleAction, this.walkAction, this.runAction];
 
-            this.setAnimationWeight( this.idleAction, 1 );
-            this.setAnimationWeight( this.walkAction, 0 );
-            this.setAnimationWeight( this.runAction, 0 );
+            this.setAnimationWeight(this.idleAction, 1);
+            this.setAnimationWeight(this.walkAction, 0);
+            this.setAnimationWeight(this.runAction, 0);
 
-            this.actions.forEach( action => {
+            this.actions.forEach(action => {
                 action.play();
             });
         });
- 
+
         this.scene.add(this);
     }
 
-    setAnimationWeight( action, weight ) {
+    setAnimationWeight(action, weight) {
         action.enabled = true;
-        action.setEffectiveTimeScale( 1 );
-        action.setEffectiveWeight( weight );
+        action.setEffectiveTimeScale(1);
+        action.setEffectiveWeight(weight);
     }
 
-    animate(deltaTime) {
+    setPosition(x, y, z) {
+        this.position.set(x, y, z);
+        this.collider.end.set(x, y, z);
+    }
+
+    /**
+     * 
+     * @param {World} world 
+     */
+    collitions(world) {
+        const result = world.worldOctree.capsuleIntersect(this.collider);
+
+        this.onFloor = false;
+
+        if (result) {
+            this.onFloor = result.normal.y > 0;
+
+            if (!this.onFloor) {
+                this.velocity.addScaledVector(result.normal, - result.normal.dot(this.velocity));
+            }
+            this.collider.translate(result.normal.multiplyScalar(result.depth));
+        }
+    }
+
+    animate(deltaTime, world) {
+
+        let damping = Math.exp(- 4 * deltaTime) - 1;
+        if (!this.onFloor) {
+            this.velocity.y -= this.gravity * deltaTime;
+            damping *= 0.1; // small air resistance
+        }
+        this.velocity.addScaledVector(this.velocity, damping);
+
+        const deltaPosition = this.velocity.clone().multiplyScalar(deltaTime);
+        this.collider.translate(deltaPosition);
+
+        this.collitions(world);
+
+        this.position.copy(this.collider.end);
+
         this.mixer.update(deltaTime);
     }
 

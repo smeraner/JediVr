@@ -3,12 +3,12 @@ import { Capsule } from './three/addons/math/Capsule.js';
 
 export class Player extends THREE.Object3D {
     gravity = 0;
-    playerOnFloor = false;
+    onFloor = false;
 
-    playerCollider = new Capsule(new THREE.Vector3(0, 0.35, 0), new THREE.Vector3(0, 1, 0), 0.7);
+    collider = new Capsule(new THREE.Vector3(0, 0.35, 0), new THREE.Vector3(0, 1, 0), 0.7);
 
-    playerVelocity = new THREE.Vector3();
-    playerDirection = new THREE.Vector3();
+    velocity = new THREE.Vector3();
+    direction = new THREE.Vector3();
 
     constructor(scene, gravity) {
         super();
@@ -32,50 +32,39 @@ export class Player extends THREE.Object3D {
      * 
      * @param {World} world 
      */
-    playerCollisions(world) {
-        const result = world.worldOctree.capsuleIntersect(this.playerCollider);
+    collitions(world) {
+        const result = world.worldOctree.capsuleIntersect(this.collider);
 
-        this.playerOnFloor = false;
+        this.onFloor = false;
 
         if (result) {
+            this.onFloor = result.normal.y > 0;
 
-            this.playerOnFloor = result.normal.y > 0;
-
-            if (!this.playerOnFloor) {
-
-                this.playerVelocity.addScaledVector(result.normal, - result.normal.dot(this.playerVelocity));
-
+            if (!this.onFloor) {
+                this.velocity.addScaledVector(result.normal, - result.normal.dot(this.velocity));
             }
-
-            this.playerCollider.translate(result.normal.multiplyScalar(result.depth));
-
+            this.collider.translate(result.normal.multiplyScalar(result.depth));
         }
     }
 
     /***
      * @param {number} deltaTime
      */
-    updatePlayer(deltaTime, world) {
+    animate(deltaTime, world) {
 
         let damping = Math.exp(- 4 * deltaTime) - 1;
-
-        if (!this.playerOnFloor) {
-
-            this.playerVelocity.y -= this.gravity * deltaTime;
-
-            // small air resistance
-            damping *= 0.1;
-
+        if (!this.onFloor) {
+            this.velocity.y -= this.gravity * deltaTime;
+            damping *= 0.1; // small air resistance
         }
+        this.velocity.addScaledVector(this.velocity, damping);
 
-        this.playerVelocity.addScaledVector(this.playerVelocity, damping);
+        const deltaPosition = this.velocity.clone().multiplyScalar(deltaTime);
+        this.collider.translate(deltaPosition);
 
-        const deltaPosition = this.playerVelocity.clone().multiplyScalar(deltaTime);
-        this.playerCollider.translate(deltaPosition);
+        this.collitions(world);
 
-        this.playerCollisions(world);
-
-        this.position.copy(this.playerCollider.end);
+        this.position.copy(this.collider.end);
 
     }
 }

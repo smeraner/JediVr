@@ -140,7 +140,7 @@ class App {
         //init trooper
         const trooper = new Trooper(this.scene, this.GRAVITY);
         trooper.rotation.set(0, Math.PI, 0)
-        trooper.position.set(1.6, -1.6, -7);
+        trooper.setPosition(1.6, -1.6, -7);
         this.enemys.push(trooper);
 
         //init saber
@@ -297,16 +297,16 @@ class App {
 
         const sphere = this.spheres[this.sphereIdx];
 
-        this.camera.getWorldDirection(this.player.playerDirection);
+        this.camera.getWorldDirection(this.player.direction);
 
-        sphere.collider.center.copy(this.player.playerCollider.end).addScaledVector(this.player.playerDirection, this.player.playerCollider.radius * 1.5);
+        sphere.collider.center.copy(this.player.collider.end).addScaledVector(this.player.direction, this.player.collider.radius * 1.5);
 
         // throw the ball with more force if we hold the button longer, and if we move forward
 
         const impulse = 15 + 30 * (1 - Math.exp((this.mouseTime - performance.now()) * 0.001));
 
-        sphere.velocity.copy(this.player.playerDirection).multiplyScalar(impulse);
-        sphere.velocity.addScaledVector(this.player.playerVelocity, 2);
+        sphere.velocity.copy(this.player.direction).multiplyScalar(impulse);
+        sphere.velocity.addScaledVector(this.player.velocity, 2);
 
         this.sphereIdx = (this.sphereIdx + 1) % this.spheres.length;
 
@@ -318,26 +318,26 @@ class App {
      */
     playerSphereCollision(sphere) {
 
-        const center = this.vector1.addVectors(this.player.playerCollider.start, this.player.playerCollider.end).multiplyScalar(0.5);
+        const center = this.vector1.addVectors(this.player.collider.start, this.player.collider.end).multiplyScalar(0.5);
 
         const sphere_center = sphere.collider.center;
 
-        const r = this.player.playerCollider.radius + sphere.collider.radius;
+        const r = this.player.collider.radius + sphere.collider.radius;
         const r2 = r * r;
 
         // approximation: player = 3 spheres
 
-        for (const point of [this.player.playerCollider.start, this.player.playerCollider.end, center]) {
+        for (const point of [this.player.collider.start, this.player.collider.end, center]) {
 
             const d2 = point.distanceToSquared(sphere_center);
 
             if (d2 < r2) {
 
                 const normal = this.vector1.subVectors(point, sphere_center).normalize();
-                const v1 = this.vector2.copy(normal).multiplyScalar(normal.dot(this.player.playerVelocity));
+                const v1 = this.vector2.copy(normal).multiplyScalar(normal.dot(this.player.velocity));
                 const v2 = this.vector3.copy(normal).multiplyScalar(normal.dot(sphere.velocity));
 
-                this.player.playerVelocity.add(v2).sub(v1);
+                this.player.velocity.add(v2).sub(v1);
                 sphere.velocity.add(v1).sub(v2);
 
                 const d = (r - Math.sqrt(d2)) / 2;
@@ -423,49 +423,49 @@ class App {
 
     getForwardVector() {
 
-        this.camera.getWorldDirection(this.player.playerDirection);
-        this.player.playerDirection.y = 0;
-        this.player.playerDirection.normalize();
+        this.camera.getWorldDirection(this.player.direction);
+        this.player.direction.y = 0;
+        this.player.direction.normalize();
 
-        return this.player.playerDirection;
+        return this.player.direction;
 
     }
 
     getSideVector() {
 
-        this.camera.getWorldDirection(this.player.playerDirection);
-        this.player.playerDirection.y = 0;
-        this.player.playerDirection.normalize();
-        this.player.playerDirection.cross(this.camera.up);
+        this.camera.getWorldDirection(this.player.direction);
+        this.player.direction.y = 0;
+        this.player.direction.normalize();
+        this.player.direction.cross(this.camera.up);
 
-        return this.player.playerDirection;
+        return this.player.direction;
 
     }
 
     controls(deltaTime) {
 
         // gives a bit of air control
-        const speedDelta = deltaTime * (this.player.playerOnFloor ? 25 : 8);
+        const speedDelta = deltaTime * (this.player.onFloor ? 25 : 8);
 
         if (this.keyStates['KeyW']) {
-            this.player.playerVelocity.add(this.getForwardVector().multiplyScalar(speedDelta));
+            this.player.velocity.add(this.getForwardVector().multiplyScalar(speedDelta));
         }
 
         if (this.keyStates['KeyS']) {
-            this.player.playerVelocity.add(this.getForwardVector().multiplyScalar(- speedDelta));
+            this.player.velocity.add(this.getForwardVector().multiplyScalar(- speedDelta));
         }
 
         if (this.keyStates['KeyA']) {
-            this.player.playerVelocity.add(this.getSideVector().multiplyScalar(- speedDelta));
+            this.player.velocity.add(this.getSideVector().multiplyScalar(- speedDelta));
         }
 
         if (this.keyStates['KeyD']) {
-            this.player.playerVelocity.add(this.getSideVector().multiplyScalar(speedDelta));
+            this.player.velocity.add(this.getSideVector().multiplyScalar(speedDelta));
         }
 
-        if (this.player.playerOnFloor) {
+        if (this.player.onFloor) {
             if (this.keyStates['Space']) {
-                this.player.playerVelocity.y = 15;
+                this.player.velocity.y = 15;
             }
         }
 
@@ -483,14 +483,14 @@ class App {
             }
 
             //jump
-            if (this.player.playerOnFloor && this.controller1.gamepad.buttons[1].pressed) {
-                this.player.playerVelocity.y = 15;
+            if (this.player.onFloor && this.controller1.gamepad.buttons[1].pressed) {
+                this.player.velocity.y = 15;
             }
             //move
-            if(this.controller1.gamepad.axes[3] > 0.2) this.player.playerVelocity.add(this.getForwardVector().multiplyScalar(-speedDelta));
-            if(this.controller1.gamepad.axes[3] < -0.2) this.player.playerVelocity.add(this.getForwardVector().multiplyScalar(speedDelta));
-            if(this.controller1.gamepad.axes[2] > 0.2) this.player.playerVelocity.add(this.getSideVector().multiplyScalar(speedDelta));
-            if(this.controller1.gamepad.axes[2] < -0.2) this.player.playerVelocity.add(this.getSideVector().multiplyScalar(-speedDelta));
+            if(this.controller1.gamepad.axes[3] > 0.2) this.player.velocity.add(this.getForwardVector().multiplyScalar(-speedDelta));
+            if(this.controller1.gamepad.axes[3] < -0.2) this.player.velocity.add(this.getForwardVector().multiplyScalar(speedDelta));
+            if(this.controller1.gamepad.axes[2] > 0.2) this.player.velocity.add(this.getSideVector().multiplyScalar(speedDelta));
+            if(this.controller1.gamepad.axes[2] < -0.2) this.player.velocity.add(this.getSideVector().multiplyScalar(-speedDelta));
         }
 
         if (this.controller2.gamepad) {
@@ -531,10 +531,10 @@ class App {
 
         if (this.player.position.y <= - 25) {
 
-            this.player.playerCollider.start.set(0, 0.35, 0);
-            this.player.playerCollider.end.set(0, 1, 0);
-            this.player.playerCollider.radius = 0.35;
-            this.player.position.copy(this.player.playerCollider.end);
+            this.player.collider.start.set(0, 0.35, 0);
+            this.player.collider.end.set(0, 1, 0);
+            this.player.collider.radius = 0.35;
+            this.player.position.copy(this.player.collider.end);
             this.player.rotation.set(0, 0, 0);
 
         }
@@ -552,11 +552,11 @@ class App {
 
             this.controls(deltaTime);
 
-            this.player.updatePlayer(deltaTime, this.world);
+            this.player.animate(deltaTime, this.world);
             if(this.saber) this.saber.animate(deltaTime);
 
             this.enemys.forEach(enemy => {
-                enemy.animate(deltaTime);
+                enemy.animate(deltaTime, this.world);
             });
 
             this.updateSpheres(deltaTime);
