@@ -91,19 +91,19 @@ export class Saber extends THREE.Object3D {
         this.add(blade);
         this.rotation.x = -Math.PI / 4;
 
-        const material = new THREE.LineBasicMaterial({
-            color: 0xff0000,
-            fog: false
-        });
-        const points = [];
-        points.push( this.raycaster.ray.origin );
-        points.push( this.raycaster.ray.direction );
+        // const material = new THREE.LineBasicMaterial({
+        //     color: 0xff0000,
+        //     fog: false
+        // });
+        // const points = [];
+        // points.push( this.raycaster.ray.origin );
+        // points.push( this.raycaster.ray.direction );
         
-        const geometry = new THREE.BufferGeometry().setFromPoints( points );
+        // const geometry = new THREE.BufferGeometry().setFromPoints( points );
         
-        const line = new THREE.Line( geometry, material );
-        this.line = line;
-        app.scene.add( line );
+        // const line = new THREE.Line( geometry, material );
+        // this.line = line;
+        // app.scene.add( line );
     }
 
     setSaberColor(saberColor) {
@@ -234,19 +234,29 @@ export class Saber extends THREE.Object3D {
             const box3 = new THREE.Box3().setFromObject(this.blade)
             //box3.applyMatrix4(this.blade.children[0].matrixWorld);
 
-            const collisions = [...enemys, world].filter((obj) => {
+            const collisions = [...enemys, world].map((obj) => {
                 const box3Obj = new THREE.Box3().setFromObject(obj)
-                return box3.intersectsBox(box3Obj);
-            })
+                return {
+                    obj: obj,
+                    intersection: box3.intersectsBox(box3Obj)?box3.intersect(box3Obj):null,
+                }
+            }).filter((inter) => {
+                return inter.intersection;
+            });
+
             if(collisions.length>0){
                 //console.log(collisions)
                 this.setSaberColor(0x00ff00);
-                const actorCollisions = collisions.filter((obj) => {
-                    return obj instanceof Actor;
+                const actorCollisions = collisions.filter((inter) => {
+                    return inter.obj instanceof Actor;
                 });
                 if(actorCollisions){
-                    actorCollisions.forEach(actor => {
-                        actor.damage(1);
+                    actorCollisions.forEach(inter => {
+                        const sphereGeometry = new THREE.SphereGeometry(0.1, 32, 32);
+                        const sphere = new THREE.Mesh(sphereGeometry, new THREE.MeshBasicMaterial({color: 0x00ff00}));
+                        sphere.position.copy(inter.intersection.max);
+                        app.scene.add(sphere);
+                        inter.obj.damage(1);
                     });
                 }
             } else {
