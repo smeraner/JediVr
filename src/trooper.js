@@ -1,20 +1,13 @@
+/// <reference path="./world.js" />
 import * as THREE from './three/three.module.js';
+import { Actor } from './actor.js';
 import { GLTFLoader } from './three/addons/loaders/GLTFLoader.js';
-import { Capsule } from './three/addons/math/Capsule.js';
 
 /**
  * Trooper is a NPC enemy that will guard the world
  * and attack the player if he gets too close.
  */
-export class Trooper extends THREE.Object3D {
-    gravity = 0;
-    onFloor = false;
-
-    collider = new Capsule(new THREE.Vector3(0, -0.5, 0), new THREE.Vector3(0, 1, 0), 0.1);
-
-    velocity = new THREE.Vector3();
-    direction = new THREE.Vector3();
-
+export class Trooper extends Actor {
     static trooperModel = null;
     static #staticConstructorDummyResult = (function () {
         //load audio     
@@ -30,11 +23,8 @@ export class Trooper extends THREE.Object3D {
         });
     })()
 
-    constructor(scene, gravity) {
-        super();
-
-        this.scene = scene;
-        this.gravity = gravity;
+    constructor(gravity) {
+        super(gravity);
 
         Trooper.trooperModel.then(gltf => {
             const model = gltf.scene;
@@ -45,19 +35,19 @@ export class Trooper extends THREE.Object3D {
             this.idleAction = this.mixer.clipAction(animations[0]);
             this.walkAction = this.mixer.clipAction(animations[3]);
             this.runAction = this.mixer.clipAction(animations[1]);
+            this.TPoseAction = this.mixer.clipAction(animations[2]);
 
             this.actions = [this.idleAction, this.walkAction, this.runAction];
 
             this.setAnimationWeight(this.idleAction, 1);
             this.setAnimationWeight(this.walkAction, 0);
             this.setAnimationWeight(this.runAction, 0);
+            this.setAnimationWeight(this.TPoseAction, 0);
 
             this.actions.forEach(action => {
                 action.play();
             });
         });
-
-        this.scene.add(this);
     }
 
     setAnimationWeight(action, weight) {
@@ -66,29 +56,16 @@ export class Trooper extends THREE.Object3D {
         action.setEffectiveWeight(weight);
     }
 
-    setPosition(x, y, z) {
-        this.position.set(x, y, z);
-        this.collider.end.set(x, y, z);
+    die() {
+        super.die();
+
+        this.actions.forEach(action => {
+            action.stop();
+        });
+        this.rotation.x = -Math.PI/2;
+        this.setAnimationWeight(this.TPoseAction, 1);
     }
 
-    /**
-     * 
-     * @param {World} world 
-     */
-    collitions(world) {
-        const result = world.worldOctree.capsuleIntersect(this.collider);
-
-        this.onFloor = false;
-
-        if (result) {
-            this.onFloor = result.normal.y > 0;
-
-            if (!this.onFloor) {
-                this.velocity.addScaledVector(result.normal, - result.normal.dot(this.velocity));
-            }
-            this.collider.translate(result.normal.multiplyScalar(result.depth));
-        }
-    }
 
     animate(deltaTime, world) {
 
@@ -102,7 +79,7 @@ export class Trooper extends THREE.Object3D {
         const deltaPosition = this.velocity.clone().multiplyScalar(deltaTime);
         this.collider.translate(deltaPosition);
 
-        this.collitions(world);
+        this.worldCollitions(world);
 
         this.position.copy(this.collider.end);
 

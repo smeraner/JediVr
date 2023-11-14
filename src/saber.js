@@ -1,4 +1,5 @@
 import * as THREE from './three/three.module.js';
+import { Actor } from './actor.js';
 
 export class Saber extends THREE.Object3D {
 
@@ -28,6 +29,8 @@ export class Saber extends THREE.Object3D {
     constructor(bloom_scene, saberColor = 0xff0000) {
         super();
 
+        this.saberColor = saberColor;
+
         const handleGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.3, 8, 1, false);
         const handleMaterial = new THREE.MeshStandardMaterial({
             color: 'grey',
@@ -55,6 +58,8 @@ export class Saber extends THREE.Object3D {
         const bladeGlowGeometry = new THREE.CylinderGeometry(0.027, 0.027, 1.3, 8, 1, false);
         const bladeGlowMaterial = new THREE.MeshBasicMaterial({
             color: saberColor,
+            emissive: saberColor,
+            emissiveIntensity: 1,
             transparent: true,
             opacity: 0.15,
             side: THREE.DoubleSide,
@@ -72,11 +77,42 @@ export class Saber extends THREE.Object3D {
         light.position.set(0, 0.8, 0);
         blade.add(light);
 
+        const point = new THREE.Object3D();
+        point.position.set(0, 1.3, 0);
+        this.spike = point;
+        blade.add(point);
+
+        let raycaster = new THREE.Raycaster(new THREE.Vector3(0, 0.08, 0), new THREE.Vector3(0, 1, 0), 0, 1.3);
+        this.raycaster = raycaster;
+
         this.blade = blade;
 
         this.add(handle);
         this.add(blade);
         this.rotation.x = -Math.PI / 4;
+
+        const material = new THREE.LineBasicMaterial({
+            color: 0xff0000,
+            fog: false
+        });
+        const points = [];
+        points.push( this.raycaster.ray.origin );
+        points.push( this.raycaster.ray.direction );
+        
+        const geometry = new THREE.BufferGeometry().setFromPoints( points );
+        
+        const line = new THREE.Line( geometry, material );
+        this.line = line;
+        app.scene.add( line );
+    }
+
+    setSaberColor(saberColor) {
+        this.saberColor = saberColor;
+        this.blade.children[0].material.color.set(saberColor);
+        this.blade.children[0].material.emissive.set(saberColor);
+        this.blade.children[1].material.color.set(saberColor);
+        this.blade.children[2].material.color.set(saberColor);
+        this.blade.children[3].color.set(saberColor);
     }
 
     async initAudio(audioListener) {
@@ -141,7 +177,7 @@ export class Saber extends THREE.Object3D {
         if (this.soundSwing && this.blade.visible===true) this.soundSwing.play();
     }
 
-    animate(deltaTime) {
+    animate(deltaTime, world, enemys) {
         if (this.blade.visible) {
             this.blade.rotation.y += deltaTime * 0.5;
         }
@@ -168,7 +204,69 @@ export class Saber extends THREE.Object3D {
                 this.animation = Saber.ANIMATIONS.NO;
             }
         }
-
+        this.collide(world,enemys);
     }
+
+    collide(world, enemys) {
+        //if(!this.blade.visible) return;
+        /*
+        //get world position of handle
+        let v1 = new THREE.Vector3(0,0,0);
+        this.handle.getWorldPosition(v1);
+
+        //get world position of blade
+        let v2 = new THREE.Vector3(0,0,0);
+        this.spike.getWorldPosition(v2);
+
+        //calculate direction from handle to blade
+        v2.sub(v1);
+
+        //set raycaster to handle position and direction to blade position
+        this.raycaster.set(v1, v2.normalize());
+        let intersectioned = this.raycaster.intersectObjects([...enemys, world])
+        if(intersectioned.length){
+            console.log(intersectioned)
+        }
+        this.drawRaycastLine(this.raycaster);*/
+
+         if(this.blade.visible){
+            //this.blade.updateMatrixWorld(true);
+            const box3 = new THREE.Box3().setFromObject(this.blade)
+            //box3.applyMatrix4(this.blade.children[0].matrixWorld);
+
+            const collisions = [...enemys, world].filter((obj) => {
+                const box3Obj = new THREE.Box3().setFromObject(obj)
+                return box3.intersectsBox(box3Obj);
+            })
+            if(collisions.length>0){
+                //console.log(collisions)
+                this.setSaberColor(0x00ff00);
+                const actorCollisions = collisions.filter((obj) => {
+                    return obj instanceof Actor;
+                });
+                if(actorCollisions){
+                    actorCollisions.forEach(actor => {
+                        actor.damage(1);
+                    });
+                }
+            } else {
+                this.setSaberColor(0xff0000);
+            }
+            //const box = new THREE.Box3Helper(box3, 0xffff00);
+
+        }
+    }
+
+    drawRaycastLine(raycaster) {
+
+        this.line.geometry.dispose();
+        const points = [];
+        points.push( raycaster.ray.origin );
+        points.push( raycaster.ray.origin.clone().add( raycaster.ray.direction ) );
+
+        const geometry = new THREE.BufferGeometry().setFromPoints( points );
+        this.line.geometry = geometry;
+
+      }
 
 }

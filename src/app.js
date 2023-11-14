@@ -138,7 +138,8 @@ class App {
         this.camera = this.player.getCamera();
 
         //init trooper
-        const trooper = new Trooper(this.scene, this.GRAVITY);
+        const trooper = new Trooper(this.GRAVITY);
+        this.scene.add(trooper);
         trooper.rotation.set(0, Math.PI, 0)
         trooper.setPosition(1.6, -1.6, -7);
         this.enemys.push(trooper);
@@ -553,7 +554,7 @@ class App {
             this.controls(deltaTime);
 
             this.player.animate(deltaTime, this.world);
-            if(this.saber) this.saber.animate(deltaTime);
+            if(this.saber) this.saber.animate(deltaTime, this.world, this.enemys);
 
             this.enemys.forEach(enemy => {
                 enemy.animate(deltaTime, this.world);
