@@ -138,11 +138,7 @@ class App {
         this.camera = this.player.getCamera();
 
         //init trooper
-        const trooper = new Trooper(this.GRAVITY);
-        this.scene.add(trooper);
-        trooper.rotation.set(0, Math.PI, 0)
-        trooper.setPosition(1.6, -1.6, -7);
-        this.enemys.push(trooper);
+        this.initEnemies();
 
         //init saber
         //debug add light saber to player
@@ -214,6 +210,20 @@ class App {
             });
         }
 
+    }
+
+    initEnemies() {
+        const trooper = new Trooper(this.GRAVITY);
+        this.scene.add(trooper);
+        trooper.rotation.set(0, Math.PI, 0);
+        trooper.setPosition(1.6, -1.6, -7);
+        this.enemys.push(trooper);
+        trooper.addEventListener('dead', () => {
+            setTimeout(() => {
+                this.scene.remove(trooper);
+                this.enemys.splice(this.enemys.indexOf(trooper), 1);
+            }, 3000);
+        });
     }
 
     async initAudio() {

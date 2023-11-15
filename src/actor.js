@@ -16,6 +16,7 @@ export class Actor extends THREE.Object3D {
         super();
 
         this.gravity = gravity;
+        this.addEventListener('dead', this.die);
     }
 
     /**
@@ -45,7 +46,7 @@ export class Actor extends THREE.Object3D {
     damage(amount) {
         this.health -= amount * this.damageMultiplyer;
         if (this.health <= 0) {
-            this.die();
+            this.dispatchEvent({ type: 'dead' });
         }
     }
 
