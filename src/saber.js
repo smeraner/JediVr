@@ -3,6 +3,7 @@ import { Actor } from './actor.js';
 
 export class Saber extends THREE.Object3D {
 
+    static debug = false;
     static soundBufferHumming = null;
     static soundBufferInit = null;
     static soundBufferSwing = null;
@@ -50,19 +51,23 @@ export class Saber extends THREE.Object3D {
             emissiveIntensity: 1,
             flatShading: false,
             side: THREE.DoubleSide,
+            roughness: 1,
+            metalness: 0,
         });
         const bladeMesh = new THREE.Mesh(bladeGeometry, bladeMaterial);
         bladeMesh.position.set(0, 0.8, 0);
         blade.add(bladeMesh);
 
         const bladeGlowGeometry = new THREE.CylinderGeometry(0.027, 0.027, 1.3, 8, 1, false);
-        const bladeGlowMaterial = new THREE.MeshBasicMaterial({
+        const bladeGlowMaterial = new THREE.MeshStandardMaterial({
             color: saberColor,
             emissive: saberColor,
             emissiveIntensity: 1,
             transparent: true,
             opacity: 0.15,
             side: THREE.DoubleSide,
+            roughness: 1,
+            metalness: 0,
         });
         const bladeGlowMesh = new THREE.Mesh(bladeGlowGeometry, bladeGlowMaterial);
         bladeGlowMesh.position.set(0, 0.8, 0);
@@ -73,8 +78,9 @@ export class Saber extends THREE.Object3D {
         bladeGlowMesh2.position.set(0, 0.8, 0);
         blade.add(bladeGlowMesh2);
 
-        const light = new THREE.PointLight(saberColor, 1, 100);
+        const light = new THREE.PointLight(saberColor, 1, 100 );
         light.position.set(0, 0.8, 0);
+        this.light = light;
         blade.add(light);
 
         const point = new THREE.Object3D();
@@ -90,6 +96,12 @@ export class Saber extends THREE.Object3D {
         this.add(handle);
         this.add(blade);
         this.rotation.x = -Math.PI / 4;
+
+        if (Saber.debug) {
+            const box3 = new THREE.Box3().setFromObject(this.blade);
+            const box = new THREE.Box3Helper(box3, 0xffff00);
+            this.add(box);
+        }
 
         // const material = new THREE.LineBasicMaterial({
         //     color: 0xff0000,
@@ -111,7 +123,7 @@ export class Saber extends THREE.Object3D {
         this.blade.children[0].material.color.set(saberColor);
         this.blade.children[0].material.emissive.set(saberColor);
         this.blade.children[1].material.color.set(saberColor);
-        this.blade.children[2].material.color.set(saberColor);
+        this.blade.children[1].material.emissive.set(saberColor);
         this.blade.children[3].color.set(saberColor);
     }
 
@@ -173,6 +185,8 @@ export class Saber extends THREE.Object3D {
     }
 
     swing() {
+        if(this.animation !== Saber.ANIMATIONS.NO) return;
+
         this.animation = Saber.ANIMATIONS.SWING;
         if (this.soundSwing && this.blade.visible===true) this.soundSwing.play();
     }
@@ -202,6 +216,7 @@ export class Saber extends THREE.Object3D {
                 this.rotation.z = this.initalRotationZ
                 this.rotation.x = this.initalRotationX
                 this.animation = Saber.ANIMATIONS.NO;
+                this.soundSwing.stop();
             }
         }
         this.collide(world,enemys);
@@ -230,12 +245,11 @@ export class Saber extends THREE.Object3D {
         this.drawRaycastLine(this.raycaster);*/
 
          if(this.blade.visible){
-            //this.blade.updateMatrixWorld(true);
             const box3 = new THREE.Box3().setFromObject(this.blade)
-            //box3.applyMatrix4(this.blade.children[0].matrixWorld);
 
             const collisions = [...enemys, world].map((obj) => {
                 const box3Obj = new THREE.Box3().setFromObject(obj)
+
                 return {
                     obj: obj,
                     intersection: box3.intersectsBox(box3Obj)?box3.intersect(box3Obj):null,
@@ -252,18 +266,27 @@ export class Saber extends THREE.Object3D {
                 });
                 if(actorCollisions){
                     actorCollisions.forEach(inter => {
-                        const sphereGeometry = new THREE.SphereGeometry(0.1, 32, 32);
-                        const sphere = new THREE.Mesh(sphereGeometry, new THREE.MeshBasicMaterial({color: 0x00ff00}));
-                        sphere.position.copy(inter.intersection.max);
-                        app.scene.add(sphere);
-                        inter.obj.damage(1);
+                        const vector = inter.intersection.max;
+                        //translate to local space
+                        this.worldToLocal(vector);
+                        this.collisionEffect(vector);
+                        //inter.obj.damage(1);
                     });
                 }
             } else {
                 this.setSaberColor(0xff0000);
+                this.collisionEffect();
             }
             //const box = new THREE.Box3Helper(box3, 0xffff00);
 
+        }
+    }
+
+    collisionEffect(vector) {
+        if(vector) {
+            this.light.position.copy(vector);
+        } else {
+            this.light.position.set(0, 0.8, 0);
         }
     }
 

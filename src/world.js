@@ -5,6 +5,7 @@ import { Octree } from './three/addons/math/Octree.js';
 
 export class World extends THREE.Object3D {
 
+    static debug = false;
     worldOctree = new Octree();
 
     constructor(gui) {

@@ -8,6 +8,8 @@ import { GLTFLoader } from './three/addons/loaders/GLTFLoader.js';
  * and attack the player if he gets too close.
  */
 export class Trooper extends Actor {
+    
+    static debug = false;
     static trooperModel = null;
     static #staticConstructorDummyResult = (function () {
         //load audio     
@@ -27,10 +29,10 @@ export class Trooper extends Actor {
         super(gravity);
 
         Trooper.trooperModel.then(gltf => {
-            const model = gltf.scene;
-            this.add(model);
+            this.model = gltf.scene;
+            this.add(this.model);
             const animations = gltf.animations;
-            this.mixer = new THREE.AnimationMixer(model);
+            this.mixer = new THREE.AnimationMixer(this.model);
 
             this.idleAction = this.mixer.clipAction(animations[0]);
             this.walkAction = this.mixer.clipAction(animations[3]);
@@ -47,7 +49,14 @@ export class Trooper extends Actor {
             this.actions.forEach(action => {
                 action.play();
             });
+
+            // if(Trooper.debug) {
+            //     const box3 = new THREE.Box3().setFromObject(this);
+            //     const box = new THREE.Box3Helper(box3, 0xffff00);
+            //     this.add(box);
+            // }
         });
+
     }
 
     setAnimationWeight(action, weight) {
@@ -68,20 +77,7 @@ export class Trooper extends Actor {
 
 
     animate(deltaTime, world) {
-
-        let damping = Math.exp(- 4 * deltaTime) - 1;
-        if (!this.onFloor) {
-            this.velocity.y -= this.gravity * deltaTime;
-            damping *= 0.1; // small air resistance
-        }
-        this.velocity.addScaledVector(this.velocity, damping);
-
-        const deltaPosition = this.velocity.clone().multiplyScalar(deltaTime);
-        this.collider.translate(deltaPosition);
-
-        this.worldCollitions(world);
-
-        this.position.copy(this.collider.end);
+        super.animate(deltaTime, world);
 
         this.mixer.update(deltaTime);
     }

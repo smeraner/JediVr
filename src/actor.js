@@ -2,6 +2,7 @@ import * as THREE from './three/three.module.js';
 import { Capsule } from './three/addons/math/Capsule.js';
 
 export class Actor extends THREE.Object3D {
+    
     gravity = 0;
     health = 100;
     damageMultiplyer = 0.1;
@@ -36,6 +37,22 @@ export class Actor extends THREE.Object3D {
             }
             this.collider.translate(result.normal.multiplyScalar(result.depth));
         }
+    }
+
+    animate(deltaTime, world) {
+        let damping = Math.exp(- 4 * deltaTime) - 1;
+        if (!this.onFloor) {
+            this.velocity.y -= this.gravity * deltaTime;
+            damping *= 0.1; // small air resistance
+        }
+        this.velocity.addScaledVector(this.velocity, damping);
+
+        const deltaPosition = this.velocity.clone().multiplyScalar(deltaTime);
+        this.collider.translate(deltaPosition);
+
+        this.worldCollitions(world);
+
+        this.position.copy(this.collider.end);
     }
 
     setPosition(x, y, z) {

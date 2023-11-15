@@ -120,7 +120,7 @@ class App {
      * Plays audio and adds a light saber to the player's scene.
      */
     async onFirstUserAction() {
-        //this.playAudio();
+        this.playAudio();
         await this.saber.initAudio(this.listener);
     }
 
@@ -234,8 +234,8 @@ class App {
         const audioLoader = new THREE.AudioLoader();
         const initSound = await audioLoader.loadAsync('sounds/background_song.ogg');
         this.sound.setBuffer(initSound);
-        this.sound.setLoop(false);
-        this.sound.setVolume(0.03);
+        this.sound.setLoop(true);
+        this.sound.setVolume(0.3);
 
 
         // audioLoader.load('sounds/358232_j_s_song.ogg', function (buffer) {
