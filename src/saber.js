@@ -97,7 +97,7 @@ export class Saber extends THREE.Object3D {
             const lensMaterial = new THREE.MeshBasicMaterial( { 
                 map: textureFlare0, 
                 alphaMap: textureFlare0,
-                color: 0xffffff,
+                color: 0xff0000,
                 transparent: true } );
             const lensPlane = new THREE.Mesh( lensPlaneGeometry, lensMaterial );
             lensPlane.position.copy(light.position);
