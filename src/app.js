@@ -213,17 +213,27 @@ class App {
     }
 
     initEnemies() {
-        const trooper = new Trooper(this.GRAVITY);
-        this.scene.add(trooper);
-        trooper.rotation.set(0, Math.PI, 0);
-        trooper.setPosition(1.6, -1.6, -7);
-        this.enemys.push(trooper);
-        trooper.addEventListener('dead', () => {
-            setTimeout(() => {
-                this.scene.remove(trooper);
-                this.enemys.splice(this.enemys.indexOf(trooper), 1);
-            }, 3000);
-        });
+        const spawnPositions = [
+            new THREE.Vector3(1.6, -1.6, -7),
+        ];
+
+        const spawn = ()=>{
+            const spawnPosition = spawnPositions[Math.floor(Math.random() * spawnPositions.length)];
+            const trooper = new Trooper(this.GRAVITY);
+            trooper.rotation.set(0, Math.PI, 0);
+            trooper.setPosition(spawnPosition.x, spawnPosition.y, spawnPosition.z);
+            trooper.addEventListener('dead', () => {
+                setTimeout(() => {
+                    this.scene.remove(trooper);
+                    this.enemys.splice(this.enemys.indexOf(trooper), 1);
+                    spawn();
+                }, 3000);
+            });
+            this.enemys.push(trooper);
+            this.scene.add(trooper);
+        }
+
+        spawn();
     }
 
     async initAudio() {

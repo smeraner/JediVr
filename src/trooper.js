@@ -25,6 +25,8 @@ export class Trooper extends Actor {
         });
     })()
 
+    damageMultiplyer = 0.25;
+
     constructor(gravity) {
         super(gravity);
 
