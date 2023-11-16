@@ -1,19 +1,15 @@
 import http.server
 import ssl
 
-Handler = http.server.SimpleHTTPRequestHandler
-# Handler.extensions_map={
-#         '.manifest': 'text/cache-manifest',
-#         '.html': 'text/html',
-#         '.png': 'image/png',
-#         '.jpg': 'image/jpg',
-#         '.svg':	'image/svg+xml',
-#         '.css':	'text/css',
-#         '.js':	'application/x-javascript',
-#         '.frag': 'application/javascript',
-#         '.vert': 'application/javascript',
-#         '': 'application/octet-stream', # Default
-#     }
+DIRECTORY = ".."
+ADDRESS='0.0.0.0'
+
+print("Serving at: https://localhost:443/JediVr/")
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=DIRECTORY, **kwargs)
+
 httpd = http.server.HTTPServer(('0.0.0.0', 443), Handler)
 httpd.socket = ssl.wrap_socket (httpd.socket, certfile='./server.pem', server_side=True)
 httpd.serve_forever()
