@@ -46,7 +46,10 @@ export class World extends THREE.Object3D {
     async loadScene() {
 
         const scene = await this.objectLoader.loadAsync('./models/scene.json');
-        this.worldOctree.fromGraphNode(scene);
+
+        const map = scene.children.find(child=> child.name==="collision-world.glb");
+        this.map = map;
+        this.worldOctree.fromGraphNode(map);
 
         //find object with name "Hemisphere" and change material to repeat
         scene.traverse(child => {

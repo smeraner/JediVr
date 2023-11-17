@@ -28,15 +28,14 @@ export class Saber extends THREE.Object3D {
     animation = Saber.ANIMATIONS.NO;
 
     /**
-     * @param {THREE.Scene} bloom_scene
      * @param {String} saberColor white, red or limegreen
      */
-    constructor(bloom_scene, saberColor = 0xff0000) {
+    constructor(saberColor = 0xff0000) {
         super();
 
         this.saberColor = saberColor;
 
-        const handleGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.3, 8, 1, false);
+        const handleGeometry = new THREE.CylinderGeometry(0.015, 0.015, 0.2, 8, 1, false);
         const handleMaterial = new THREE.MeshStandardMaterial({
             color: 'grey',
             metalness: 0.5,
@@ -48,7 +47,7 @@ export class Saber extends THREE.Object3D {
 
         const blade = new THREE.Object3D();
         blade.visible = false;
-        const bladeGeometry = new THREE.CylinderGeometry(0.02, 0.02, 1.3, 8, 1, false);
+        const bladeGeometry = new THREE.CylinderGeometry(0.013, 0.013, 1.2, 8, 1, false);
         const bladeMaterial = new THREE.MeshStandardMaterial({
             color: saberColor,
             emissive: saberColor,
@@ -59,10 +58,10 @@ export class Saber extends THREE.Object3D {
             metalness: 0,
         });
         const bladeMesh = new THREE.Mesh(bladeGeometry, bladeMaterial);
-        bladeMesh.position.set(0, 0.8, 0);
+        bladeMesh.position.set(0, 0.7, 0);
         blade.add(bladeMesh);
 
-        const bladeGlowGeometry = new THREE.CylinderGeometry(0.027, 0.027, 1.3, 8, 1, false);
+        const bladeGlowGeometry = new THREE.CylinderGeometry(0.02, 0.02, 1.2, 8, 1, false);
         const bladeGlowMaterial = new THREE.MeshStandardMaterial({
             color: saberColor,
             emissive: saberColor,
@@ -74,16 +73,16 @@ export class Saber extends THREE.Object3D {
             metalness: 0,
         });
         const bladeGlowMesh = new THREE.Mesh(bladeGlowGeometry, bladeGlowMaterial);
-        bladeGlowMesh.position.set(0, 0.8, 0);
+        bladeGlowMesh.position.set(0, 0.7, 0);
         blade.add(bladeGlowMesh);
 
-        const bladeGlowGeometry2 = new THREE.CylinderGeometry(0.035, 0.035, 1.3, 8, 1, false);
+        const bladeGlowGeometry2 = new THREE.CylinderGeometry(0.025, 0.025, 1.2, 8, 1, false);
         const bladeGlowMesh2 = new THREE.Mesh(bladeGlowGeometry2, bladeGlowMaterial);
-        bladeGlowMesh2.position.set(0, 0.8, 0);
+        bladeGlowMesh2.position.set(0, 0.7, 0);
         blade.add(bladeGlowMesh2);
 
-        const light = new THREE.PointLight(saberColor, 1, 100 );
-        light.position.set(0, 1.8, 0);
+        const light = new THREE.PointLight(saberColor, 2, 100, 3 );
+        light.position.set(0, 0.8, 0);
         this.light = light;
         blade.add(light);
         this.blade = blade;
@@ -97,7 +96,7 @@ export class Saber extends THREE.Object3D {
             const lensMaterial = new THREE.MeshBasicMaterial( { 
                 map: textureFlare0, 
                 alphaMap: textureFlare0,
-                color: 0xff0000,
+                color: 0xffffff,
                 transparent: true } );
             const lensPlane = new THREE.Mesh( lensPlaneGeometry, lensMaterial );
             lensPlane.position.copy(light.position);
@@ -179,6 +178,16 @@ export class Saber extends THREE.Object3D {
         this.blade.visible = true;
         if (this.soundInit) this.soundInit.play();
         if (this.soundHumming) this.soundHumming.play();
+        this.blade.scale.y = 0.01;
+        const animateIgnition = () => {
+            this.blade.scale.y += 0.1;
+            if (this.blade.scale.y < 1) {
+                setTimeout(() => { animateIgnition() }, 10);
+            } else {
+                this.blade.scale.y = 1;
+            }
+        }
+        animateIgnition();
     }
 
     off() {
@@ -188,13 +197,10 @@ export class Saber extends THREE.Object3D {
     }
 
     toggle() {
-        this.blade.visible = !this.blade.visible;
         if (this.blade.visible) {
-            if (this.soundInit) this.soundInit.play();
-            if (this.soundHumming) this.soundHumming.play();
+            this.off();
         } else {
-            if (this.soundHumming) this.soundHumming.stop();
-            if (this.soundInit) this.soundInit.stop();
+            this.on();
         }
     }
 
@@ -268,7 +274,7 @@ export class Saber extends THREE.Object3D {
          if(this.blade.visible){
             this.bounds.setFromObject(this.blade)
 
-            const collisions = [...enemys, world].map((obj) => {
+            const collisions = enemys.map((obj) => {
                 const box3Obj = new THREE.Box3().setFromObject(obj)
                 let intersection = null;
                 const intersectBox = this.bounds.intersectsBox(box3Obj);

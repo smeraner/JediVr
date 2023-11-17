@@ -84,8 +84,12 @@ class App {
 
         //init audio on first click
         document.addEventListener('mouseup', async () => this.onFirstUserAction(), { once: true });
-        window.addEventListener('blur', async () => this.stopAudio(), { once: true });
-        this.renderer.xr.addEventListener('sessionstart', async () => this.onFirstUserAction(), { once: true });
+        window.addEventListener('blur', async () => this.stopAudio());
+        window.addEventListener('focus', async () => this.playAudio());
+        this.renderer.xr.addEventListener('sessionstart', async () => {
+            this.onFirstUserAction()
+            this.removeDefaultSaber();
+        }, { once: true });
         
         window.addEventListener('resize', this.resize.bind(this));
         document.addEventListener('keydown', (event) => {
@@ -143,15 +147,7 @@ class App {
         //init saber
         //debug add light saber to player
         if(!this.renderer.xr.isPresenting) {
-            this.saber = new Saber(this.BLOOM_SCENE);
-            this.saber.position.set(0, -0.2, -0.6);
-            this.saber.setInitialRotation(-Math.PI / 4, 0, -0.7);
-            this.player.add(this.saber);
-
-            document.addEventListener('mouseup', async (e) => {
-                if(e.button===2)this.saber.toggle();
-                if(e.button===0)this.saber.swing();
-            });
+            this.addDefaultSaber();
         }
 
         //init effect postprocessing
@@ -212,6 +208,26 @@ class App {
 
     }
 
+    defaultSaberToggle(e) {
+        if (e.button === 2) this.saber.toggle();
+        if (e.button === 0) this.saber.swing();
+    }
+
+    addDefaultSaber() {
+        this.saber = new Saber();
+        this.saber.position.set(0, -0.2, -0.6);
+        this.saber.setInitialRotation(-Math.PI / 4, 0, -0.7);
+        this.player.add(this.saber);
+
+        document.addEventListener('mouseup', this.defaultSaberToggle.bind(this));
+    }
+
+    removeDefaultSaber() {
+        this.player.remove(this.saber);
+        this.saber = null;
+        document.removeEventListener('mouseup', this.defaultSaberToggle);
+    }
+
     initEnemies() {
         const spawnPositions = [
             new THREE.Vector3(1.6, -1.6, -7),
@@ -270,7 +286,7 @@ class App {
         this.controller1 = this.renderer.xr.getController(0);
         this.controller1.addEventListener('connected', (e) => {
             this.controller1.gamepad = e.data.gamepad;
-            this.saber1 = new Saber(this.BLOOM_SCENE, this.saberVertexShader, this.saberFragmentShader);
+            this.saber1 = new Saber();
             this.saber1.initAudio(this.listener);
             this.controller1.add( this.saber1 );
         });
@@ -282,7 +298,7 @@ class App {
         this.controller2 = this.renderer.xr.getController(1);
         this.controller2.addEventListener('connected', (e) => {
             this.controller2.gamepad = e.data.gamepad;
-            this.saber2 = new Saber(this.BLOOM_SCENE, this.saberVertexShader, this.saberFragmentShader);
+            this.saber2 = new Saber();
             this.saber2.initAudio(this.listener);
             this.controller2.add( this.saber2 );
         });
@@ -575,6 +591,8 @@ class App {
 
             this.player.animate(deltaTime, this.world);
             if(this.saber) this.saber.animate(deltaTime, this.world, this.enemys);
+            if(this.saber1) this.saber1.animate(deltaTime, this.world, this.enemys);
+            if(this.saber2) this.saber2.animate(deltaTime, this.world, this.enemys);
 
             this.enemys.forEach(enemy => {
                 enemy.animate(deltaTime, this.world);
