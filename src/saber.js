@@ -1,5 +1,4 @@
 import * as THREE from './three/three.module.js';
-import { Lensflare, LensflareElement } from './three/addons/objects/Lensflare.js';
 import { Actor } from './actor.js';
 
 export class Saber extends THREE.Object3D {
@@ -88,10 +87,6 @@ export class Saber extends THREE.Object3D {
         this.blade = blade;
 
         Saber.textureFlare0.then(textureFlare0 => {
-            // const lensflare = new Lensflare();
-            // lensflare.addElement(new LensflareElement(textureFlare0, 256, 0, light.color));
-            // light.add(lensflare);
-
             const lensPlaneGeometry = new THREE.PlaneGeometry( 2, 2 );
             const lensMaterial = new THREE.MeshBasicMaterial( { 
                 map: textureFlare0, 
@@ -99,8 +94,6 @@ export class Saber extends THREE.Object3D {
                 color: 0xffffff,
                 transparent: true } );
             const lensPlane = new THREE.Mesh( lensPlaneGeometry, lensMaterial );
-            lensPlane.position.copy(light.position);
-            lensPlane.quaternion.copy(app.camera.quaternion);
             lensPlane.visible = false;
             this.lensPlane = lensPlane;
             app.scene.add(lensPlane);
@@ -123,19 +116,6 @@ export class Saber extends THREE.Object3D {
         this.boundsHelper.visible = Saber.debug;
         this.add(this.boundsHelper);
 
-        // const material = new THREE.LineBasicMaterial({
-        //     color: 0xff0000,
-        //     fog: false
-        // });
-        // const points = [];
-        // points.push( this.raycaster.ray.origin );
-        // points.push( this.raycaster.ray.direction );
-        
-        // const geometry = new THREE.BufferGeometry().setFromPoints( points );
-        
-        // const line = new THREE.Line( geometry, material );
-        // this.line = line;
-        // app.scene.add( line );
     }
 
     setSaberColor(saberColor) {
@@ -250,26 +230,6 @@ export class Saber extends THREE.Object3D {
     }
 
     collide(world, enemys) {
-        //if(!this.blade.visible) return;
-        /*
-        //get world position of handle
-        let v1 = new THREE.Vector3(0,0,0);
-        this.handle.getWorldPosition(v1);
-
-        //get world position of blade
-        let v2 = new THREE.Vector3(0,0,0);
-        this.spike.getWorldPosition(v2);
-
-        //calculate direction from handle to blade
-        v2.sub(v1);
-
-        //set raycaster to handle position and direction to blade position
-        this.raycaster.set(v1, v2.normalize());
-        let intersectioned = this.raycaster.intersectObjects([...enemys, world])
-        if(intersectioned.length){
-            console.log(intersectioned)
-        }
-        this.drawRaycastLine(this.raycaster);*/
 
          if(this.blade.visible){
             this.bounds.setFromObject(this.blade)
@@ -304,9 +264,9 @@ export class Saber extends THREE.Object3D {
                 });
                 if(actorCollisions){
                     actorCollisions.forEach(col => {
-                        const vector = col.intersection.point;
+                        const point = col.intersection.point;
                         //translate to local space
-                        this.collisionEffect(vector);
+                        this.collisionEffect(point);
                         col.obj.damage(5);
                     });
                 }
@@ -323,22 +283,10 @@ export class Saber extends THREE.Object3D {
         if(point) {
             this.lensPlane.visible = true;
             this.lensPlane.position.copy(point);
-            //this.lensPlane.quaternion.copy(app.camera.quaternion);
+            this.lensPlane.quaternion.copy(app.camera.quaternion);
         } else {
             this.lensPlane.visible = false;
         }
     }
-
-    // drawRaycastLine(raycaster) {
-
-    //     this.line.geometry.dispose();
-    //     const points = [];
-    //     points.push( raycaster.ray.origin );
-    //     points.push( raycaster.ray.origin.clone().add( raycaster.ray.direction ) );
-
-    //     const geometry = new THREE.BufferGeometry().setFromPoints( points );
-    //     this.line.geometry = geometry;
-
-    //   }
 
 }

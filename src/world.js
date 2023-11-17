@@ -63,7 +63,6 @@ export class World extends THREE.Object3D {
                         map.anisotropy = 4;
                     }
                 });
-
             } 
             // else if (child.isMesh && child.name === "collision-world.glb") {
             //     if (child.material.map) {
