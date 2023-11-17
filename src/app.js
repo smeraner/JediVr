@@ -258,7 +258,7 @@ class App {
 
         this.sound = new THREE.Audio(this.listener);
         const audioLoader = new THREE.AudioLoader();
-        const initSound = await audioLoader.loadAsync('sounds/background_song.ogg');
+        const initSound = await audioLoader.loadAsync('sounds/background_breath.ogg');
         this.sound.setBuffer(initSound);
         this.sound.setLoop(true);
         this.sound.setVolume(0.3);
