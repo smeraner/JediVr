@@ -2,10 +2,12 @@ import * as THREE from './three/three.module.js';
 import { Capsule } from './three/addons/math/Capsule.js';
 
 export class Player extends THREE.Object3D {
+    static debug = false;
+
     gravity = 0;
     onFloor = false;
-
-    collider = new Capsule(new THREE.Vector3(0, 0.35, 0), new THREE.Vector3(0, 1, 0), 0.7);
+     
+    collider = new Capsule(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0.3, 0), 0.8);
 
     velocity = new THREE.Vector3();
     direction = new THREE.Vector3();
@@ -17,11 +19,20 @@ export class Player extends THREE.Object3D {
         this.gravity = gravity;
 
         this.rotation.order = 'YXZ';
-        this.position.z = 1;
         this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.camera.rotation.order = 'YXZ';
+        this.camera.position.y = 1.5;
         this.add(this.camera);
         this.scene.add(this);
+
+        if (Player.debug) {
+            const capsuleGeometry = new THREE.CapsuleGeometry(this.collider.radius, this.collider.end.y - this.collider.start.y);
+            const capsuleMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true });
+            const capsule = new THREE.Mesh(capsuleGeometry, capsuleMaterial);
+            capsule.position.copy(this.collider.start);
+            this.colliderHelper = capsule;
+            this.scene.add(capsule);
+        }
     }
 
     getCamera() {
@@ -44,6 +55,9 @@ export class Player extends THREE.Object3D {
                 this.velocity.addScaledVector(result.normal, - result.normal.dot(this.velocity));
             }
             this.collider.translate(result.normal.multiplyScalar(result.depth));
+            if(Player.debug) {
+                this.colliderHelper.position.copy(this.collider.start);
+            }
         }
     }
 
@@ -65,6 +79,6 @@ export class Player extends THREE.Object3D {
         this.collitions(world);
 
         this.position.copy(this.collider.end);
-
+        this.position.y -= this.collider.radius;
     }
 }

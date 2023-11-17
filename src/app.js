@@ -111,8 +111,8 @@ class App {
 
         document.body.addEventListener('mousemove', (event) => {
             if (document.pointerLockElement === document.body) {
-                this.player.rotation.y -= event.movementX / 500;
-                this.player.rotation.x -= event.movementY / 500;
+                this.player.camera.rotation.y -= event.movementX / 500;
+                this.player.camera.rotation.x -= event.movementY / 500;
             }
         });
 
@@ -215,15 +215,15 @@ class App {
 
     addDefaultSaber() {
         this.saber = new Saber();
-        this.saber.position.set(0, -0.2, -0.6);
+        this.saber.position.set(0, -0.3, -0.6);
         this.saber.setInitialRotation(-Math.PI / 4, 0, -0.7);
-        this.player.add(this.saber);
+        this.player.camera.add(this.saber);
 
         document.addEventListener('mouseup', this.defaultSaberToggle.bind(this));
     }
 
     removeDefaultSaber() {
-        this.player.remove(this.saber);
+        this.player.camera.remove(this.saber);
         this.saber = null;
         document.removeEventListener('mouseup', this.defaultSaberToggle);
     }
