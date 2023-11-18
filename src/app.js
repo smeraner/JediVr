@@ -83,7 +83,7 @@ class App {
         await this.initAudio();
 
         //init audio on first click
-        document.addEventListener('mouseup', async () => this.onFirstUserAction(), { once: true });
+        document.addEventListener('mousedown', async () => this.onFirstUserAction(), { once: true });
         window.addEventListener('blur', async () => this.stopAudio());
         window.addEventListener('focus', async () => this.playAudio());
         this.renderer.xr.addEventListener('sessionstart', async () => {
@@ -125,6 +125,12 @@ class App {
      */
     async onFirstUserAction() {
         this.playAudio();
+
+        //init saber
+        //debug add light saber to player
+        if(!this.renderer.xr.isPresenting) {
+            this.addDefaultSaber();
+        }
         await this.saber.initAudio(this.listener);
     }
 
@@ -143,12 +149,6 @@ class App {
 
         //init trooper
         this.initEnemies(this.world.enemySpawnPoints);
-
-        //init saber
-        //debug add light saber to player
-        if(!this.renderer.xr.isPresenting) {
-            this.addDefaultSaber();
-        }
 
         //init effect postprocessing
         /*
