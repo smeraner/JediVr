@@ -1,5 +1,6 @@
 /// <reference path="./world.js" />
 import * as THREE from './three/three.module.js';
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { Actor } from './actor.js';
 import { GLTFLoader } from './three/addons/loaders/GLTFLoader.js';
 
@@ -31,8 +32,9 @@ export class Trooper extends Actor {
         super(gravity);
 
         Trooper.trooperModel.then(gltf => {
-            this.model = gltf.scene;
+            this.model = SkeletonUtils.clone( gltf.scene );
             this.add(this.model);
+
             const animations = gltf.animations;
             this.mixer = new THREE.AnimationMixer(this.model);
 

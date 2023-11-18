@@ -459,46 +459,25 @@ class App {
 
     }
 
-    getForwardVector() {
-
-        this.camera.getWorldDirection(this.player.direction);
-        this.player.direction.y = 0;
-        this.player.direction.normalize();
-
-        return this.player.direction;
-
-    }
-
-    getSideVector() {
-
-        this.camera.getWorldDirection(this.player.direction);
-        this.player.direction.y = 0;
-        this.player.direction.normalize();
-        this.player.direction.cross(this.camera.up);
-
-        return this.player.direction;
-
-    }
-
     controls(deltaTime) {
 
         // gives a bit of air control
         const speedDelta = deltaTime * (this.player.onFloor ? 25 : 8);
 
         if (this.keyStates['KeyW']) {
-            this.player.velocity.add(this.getForwardVector().multiplyScalar(speedDelta));
+            this.player.velocity.add(this.player.getForwardVector().multiplyScalar(speedDelta));
         }
 
         if (this.keyStates['KeyS']) {
-            this.player.velocity.add(this.getForwardVector().multiplyScalar(- speedDelta));
+            this.player.velocity.add(this.player.getForwardVector().multiplyScalar(- speedDelta));
         }
 
         if (this.keyStates['KeyA']) {
-            this.player.velocity.add(this.getSideVector().multiplyScalar(- speedDelta));
+            this.player.velocity.add(this.player.getSideVector().multiplyScalar(- speedDelta));
         }
 
         if (this.keyStates['KeyD']) {
-            this.player.velocity.add(this.getSideVector().multiplyScalar(speedDelta));
+            this.player.velocity.add(this.player.getSideVector().multiplyScalar(speedDelta));
         }
 
         if (this.player.onFloor) {
@@ -525,10 +504,10 @@ class App {
                 this.player.velocity.y = 15;
             }
             //move
-            if(this.controller1.gamepad.axes[3] > 0.2) this.player.velocity.add(this.getForwardVector().multiplyScalar(-speedDelta));
-            if(this.controller1.gamepad.axes[3] < -0.2) this.player.velocity.add(this.getForwardVector().multiplyScalar(speedDelta));
-            if(this.controller1.gamepad.axes[2] > 0.2) this.player.velocity.add(this.getSideVector().multiplyScalar(speedDelta));
-            if(this.controller1.gamepad.axes[2] < -0.2) this.player.velocity.add(this.getSideVector().multiplyScalar(-speedDelta));
+            if(this.controller1.gamepad.axes[3] > 0.2) this.player.velocity.add(this.player.getForwardVector().multiplyScalar(-speedDelta));
+            if(this.controller1.gamepad.axes[3] < -0.2) this.player.velocity.add(this.player.getForwardVector().multiplyScalar(speedDelta));
+            if(this.controller1.gamepad.axes[2] > 0.2) this.player.velocity.add(this.player.getSideVector().multiplyScalar(speedDelta));
+            if(this.controller1.gamepad.axes[2] < -0.2) this.player.velocity.add(this.player.getSideVector().multiplyScalar(-speedDelta));
         }
 
         if (this.controller2.gamepad) {

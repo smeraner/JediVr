@@ -44,9 +44,9 @@ export class World extends THREE.Object3D {
 
     }
 
-    async loadScene() {
+    async loadScene(url = './models/scene_ship.json') {
 
-        const scene = await this.objectLoader.loadAsync('./models/scene_ship.json');
+        const scene = await this.objectLoader.loadAsync(url);
 
         const map = scene.children.find(child=> child.name==="collision-world.glb");
         this.map = map;

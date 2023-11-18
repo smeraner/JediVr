@@ -81,4 +81,25 @@ export class Player extends THREE.Object3D {
         this.position.copy(this.collider.end);
         this.position.y -= this.collider.radius;
     }
+
+    getForwardVector() {
+
+        this.camera.getWorldDirection(this.direction);
+        this.direction.y = 0;
+        this.direction.normalize();
+
+        return this.direction;
+
+    }
+
+    getSideVector() {
+
+        this.camera.getWorldDirection(this.direction);
+        this.direction.y = 0;
+        this.direction.normalize();
+        this.direction.cross(this.camera.up);
+
+        return this.direction;
+
+    }
 }
