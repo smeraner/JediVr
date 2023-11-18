@@ -12,6 +12,7 @@ export class World extends THREE.Object3D {
         super();
 
         this.gui = gui;
+        this.enemySpawnPoints = [];
 
         this.objectLoader = new THREE.ObjectLoader();
 
@@ -45,7 +46,7 @@ export class World extends THREE.Object3D {
 
     async loadScene() {
 
-        const scene = await this.objectLoader.loadAsync('./models/scene.json');
+        const scene = await this.objectLoader.loadAsync('./models/scene_ship.json');
 
         const map = scene.children.find(child=> child.name==="collision-world.glb");
         this.map = map;
@@ -63,7 +64,10 @@ export class World extends THREE.Object3D {
                         map.anisotropy = 4;
                     }
                 });
-            } 
+            } else if (child.name === "Enemy") {
+                this.enemySpawnPoints.push(child.position);
+            }
+                
             // else if (child.isMesh && child.name === "collision-world.glb") {
             //     if (child.material.map) {
             //         child.material.map.anisotropy = 4;

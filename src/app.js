@@ -142,7 +142,7 @@ class App {
         this.camera = this.player.getCamera();
 
         //init trooper
-        this.initEnemies();
+        this.initEnemies(this.world.enemySpawnPoints);
 
         //init saber
         //debug add light saber to player
@@ -228,13 +228,12 @@ class App {
         document.removeEventListener('mouseup', this.defaultSaberToggle);
     }
 
-    initEnemies() {
-        const spawnPositions = [
+    initEnemies(spawnPositions) {
+        spawnPositions = spawnPositions.length>0 ? spawnPositions : [
             new THREE.Vector3(1.6, -1.6, -7),
         ];
 
-        const spawn = ()=>{
-            const spawnPosition = spawnPositions[Math.floor(Math.random() * spawnPositions.length)];
+        const spawn = (spawnPosition)=>{
             const trooper = new Trooper(this.GRAVITY);
             trooper.rotation.set(0, Math.PI, 0);
             trooper.setPosition(spawnPosition.x, spawnPosition.y, spawnPosition.z);
@@ -242,14 +241,16 @@ class App {
                 setTimeout(() => {
                     this.scene.remove(trooper);
                     this.enemys.splice(this.enemys.indexOf(trooper), 1);
-                    spawn();
+                    spawn(spawnPositions);
                 }, 3000);
             });
             this.enemys.push(trooper);
             this.scene.add(trooper);
         }
 
-        spawn();
+        spawnPositions.forEach((spawnPosition) => {
+            spawn(spawnPosition);
+        });
     }
 
     async initAudio() {
