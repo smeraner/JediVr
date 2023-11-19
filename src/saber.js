@@ -1,5 +1,6 @@
 import * as THREE from './three/three.module.js';
 import { Actor } from './actor.js';
+import { OBB } from './three/addons/math/OBB.js';
 
 export class Saber extends THREE.Object3D {
 
@@ -15,7 +16,7 @@ export class Saber extends THREE.Object3D {
         Saber.soundBufferSwing = audioLoader.loadAsync('./sounds/saber-swing.ogg');
 
         const textureLoader = new THREE.TextureLoader();
-        Saber.textureFlare0 = textureLoader.loadAsync( './textures/lensflare0.png' );
+        Saber.textureFlare0 = textureLoader.loadAsync('./textures/lensflare0.png');
     })()
 
     static ANIMATIONS = {
@@ -80,20 +81,21 @@ export class Saber extends THREE.Object3D {
         bladeGlowMesh2.position.set(0, 0.7, 0);
         blade.add(bladeGlowMesh2);
 
-        const light = new THREE.PointLight(saberColor, 2, 100, 3 );
+        const light = new THREE.PointLight(saberColor, 2, 100, 3);
         light.position.set(0, 0.8, 0);
         this.light = light;
         blade.add(light);
         this.blade = blade;
 
         Saber.textureFlare0.then(textureFlare0 => {
-            const lensPlaneGeometry = new THREE.PlaneGeometry( 2, 2 );
-            const lensMaterial = new THREE.MeshBasicMaterial( { 
-                map: textureFlare0, 
+            const lensPlaneGeometry = new THREE.PlaneGeometry(2, 2);
+            const lensMaterial = new THREE.MeshBasicMaterial({
+                map: textureFlare0,
                 alphaMap: textureFlare0,
                 color: 0xffffff,
-                transparent: true } );
-            const lensPlane = new THREE.Mesh( lensPlaneGeometry, lensMaterial );
+                transparent: true
+            });
+            const lensPlane = new THREE.Mesh(lensPlaneGeometry, lensMaterial);
             lensPlane.visible = false;
             this.lensPlane = lensPlane;
             app.scene.add(lensPlane);
@@ -114,7 +116,7 @@ export class Saber extends THREE.Object3D {
         this.bounds = new THREE.Box3().setFromObject(this.blade);
         this.boundsHelper = new THREE.Box3Helper(this.bounds, 0xffff00);
         this.boundsHelper.visible = Saber.debug;
-        this.add(this.boundsHelper);
+        app.scene.add(this.boundsHelper);
 
     }
 
@@ -192,10 +194,10 @@ export class Saber extends THREE.Object3D {
     }
 
     swing() {
-        if(this.animation !== Saber.ANIMATIONS.NO) return;
+        if (this.animation !== Saber.ANIMATIONS.NO) return;
 
         this.animation = Saber.ANIMATIONS.SWING;
-        if (this.soundSwing && this.blade.visible===true) this.soundSwing.play();
+        if (this.soundSwing && this.blade.visible === true) this.soundSwing.play();
     }
 
     animate(deltaTime, world, enemys) {
@@ -204,7 +206,7 @@ export class Saber extends THREE.Object3D {
         }
 
         const maxSpeed = 30;
-        if(this.animation == Saber.ANIMATIONS.SWING) {
+        if (this.animation == Saber.ANIMATIONS.SWING) {
             //swing animation with start and end, end same position as start
             //calculate speed based on z rotation, start fast, end slow
             const speed = maxSpeed * Math.max(0.5, Math.min(1, this.rotation.z / 2));
@@ -226,52 +228,71 @@ export class Saber extends THREE.Object3D {
                 this.soundSwing.stop();
             }
         }
-        this.collide(world,enemys);
+        this.collide(world, enemys);
         this.boundsHelper.visible = Saber.debug;
     }
 
     collide(world, enemys) {
+        //this.bounds.setFromObject(this.blade, true);
 
-         if(this.blade.visible){
-            this.bounds.setFromObject(this.blade)
+        if (this.blade.visible) {
 
-            const collisions = enemys.map((obj) => {
-                const box3Obj = new THREE.Box3().setFromObject(obj)
-                let intersection = null;
-                const intersectBox = this.bounds.intersectsBox(box3Obj);
-                if(intersectBox){
-                    intersection = {
-                        point: this.position.clone()
-                    }
-                    // //intersection = this.bounds.intersect(box3Obj);
-                    // const rayOrigin = this.handle.getWorldPosition(new THREE.Vector3());
-                    // const rayDirection = this.bladePeak.getWorldPosition(new THREE.Vector3()).sub(rayOrigin).normalize();
-                    // this.raycaster.set(rayOrigin.clone(), rayDirection.clone());
-                    // const rayIntersections = this.raycaster.intersectObject(obj,true);
-                    // if(rayIntersections.length){
-                    //     //console.log(rayIntersections)
-                    //     intersection = rayIntersections[0];
-                    // }
-                }
+            const enemyColliders = enemys.map((enemy) => enemy.colliderHelper);
+
+            const rayOrigin = this.handle.getWorldPosition(new THREE.Vector3());
+            const rayDirection = this.bladePeak.getWorldPosition(new THREE.Vector3()).sub(rayOrigin).normalize();
+            this.raycaster.set(rayOrigin, rayDirection);
+            const rayIntersections = this.raycaster.intersectObjects(enemyColliders, true);
+
+            const collisions = rayIntersections.map((inters) => {
+                let obj = inters.object.userData.obj;
 
                 return {
                     obj: obj,
-                    intersection: intersection,
+                    intersection: {
+                        point: inters.point,
+                    }
                 }
-            }).filter((col) => col.intersection);
+            })
+                // const collisions = enemys.map((obj) => {
+                //     const box3Obj = new THREE.Box3().setFromObject(obj)
+                //     let intersection = null;
+                //     const intersectBox = this.bounds.intersectsBox(box3Obj);
+                //     if(intersectBox){
+                //         console.log("intersectBox");
+                //         // intersection = {
+                //         //     point: this.blade.getWorldPosition(new THREE.Vector3()),
+                //         // }
+                //         // //intersection = this.bounds.intersect(box3Obj);
+                //         const rayOrigin = this.handle.getWorldPosition(new THREE.Vector3());
+                //         const rayDirection = this.bladePeak.getWorldPosition(new THREE.Vector3()).sub(rayOrigin).normalize();
+                //         this.raycaster.set(rayOrigin, rayDirection);
+                //         const rayIntersections = this.raycaster.intersectObject(obj,true);
+                //         if(rayIntersections.length){
+                //             //console.log(rayIntersections)
+                //             intersection = rayIntersections[0];
+                //         }
+                //     }
 
-            if(collisions.length>0){
+                //     return {
+                //         obj: obj,
+                //         intersection: intersection,
+                //     }
+                // })
+                .filter((col) => col.intersection && col.obj);
+
+            if (collisions.length > 0) {
                 //console.log(collisions)
                 //this.setSaberColor(0x00ff00);
                 const actorCollisions = collisions.filter((col) => {
                     return col.obj instanceof Actor;
                 });
-                if(actorCollisions){
+                if (actorCollisions) {
                     actorCollisions.forEach(col => {
                         const point = col.intersection.point;
                         //translate to local space
                         this.collisionEffect(point);
-                        col.obj.damage(5);
+                        col.obj.damage(1);
                     });
                 }
             } else {
@@ -284,7 +305,7 @@ export class Saber extends THREE.Object3D {
     }
 
     collisionEffect(point) {
-        if(point) {
+        if (point) {
             this.lensPlane.visible = true;
             this.lensPlane.position.copy(point);
             this.lensPlane.quaternion.copy(app.camera.quaternion);

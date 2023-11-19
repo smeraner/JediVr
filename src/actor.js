@@ -34,11 +34,12 @@ export class Actor extends THREE.Object3D {
         const capsuleGeometry = new THREE.CapsuleGeometry(this.collider.radius, this.collider.end.y - this.collider.start.y);
         const capsuleMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true });
         const colliderHelper = new THREE.Mesh(capsuleGeometry, capsuleMaterial);
+        colliderHelper.userData.obj = this;
         colliderHelper.position.copy(this.collider.start);
         this.colliderHelper = colliderHelper;
-        this.colliderHelper.visible = Actor.debug;
         this.scene.add(colliderHelper);
 
+        this.colliderHelper.visible = Actor.debug;
     }
 
     /**
@@ -57,9 +58,7 @@ export class Actor extends THREE.Object3D {
                 this.velocity.addScaledVector(result.normal, - result.normal.dot(this.velocity));
             }
             this.collider.translate(result.normal.multiplyScalar(result.depth));
-            if(Actor.debug) {
-                this.colliderHelper.position.copy(this.collider.start);
-            }
+            this.colliderHelper.position.copy(this.collider.start);
         }
     }
 
@@ -118,14 +117,13 @@ export class Actor extends THREE.Object3D {
      */
     die() {
         console.log(this, 'dead');
+        this.colliderHelper.layers.disable(0);
     }
 
     /**
      * Dispose resources.
      */
     dispose() {
-        if(Actor.debug) {
-            this.scene.remove(this.colliderHelper);
-        }
+        this.scene.remove(this.colliderHelper);
     }
 }

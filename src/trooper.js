@@ -28,7 +28,7 @@ export class Trooper extends Actor {
     })()
 
     damageMultiplyer = 0.25;
-    colliderHeight = 0.9;
+    colliderHeight = 1.2;
 
     /**
      * 
