@@ -12,11 +12,11 @@ import { Capsule } from './three/addons/math/Capsule.js';
 export class Trooper extends Actor {
     
     static debug = false;
-    static trooperModel = null;
+    static model = null;
     static #staticConstructorDummyResult = (function () {
-        //load audio     
+        //load model     
         const gltfLoader = new GLTFLoader();
-        Trooper.trooperModel = gltfLoader.loadAsync('./models/trooper.glb').then(gltf => {
+        Trooper.model = gltfLoader.loadAsync('./models/trooper.glb').then(gltf => {
             gltf.scene.traverse(child => {
                 if (child.isMesh) {
                     child.castShadow = true;
@@ -41,7 +41,7 @@ export class Trooper extends Actor {
         this.collider = new Capsule(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, this.colliderHeight, 0), this.colliderRadius);
         this.colliderMesh.geometry = new THREE.CapsuleGeometry(this.collider.radius, this.collider.end.y - this.collider.start.y);
 
-        Trooper.trooperModel.then(gltf => {
+        Trooper.model.then(gltf => {
             this.model = SkeletonUtils.clone( gltf.scene );
             this.add(this.model);
 

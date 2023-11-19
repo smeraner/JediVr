@@ -1,6 +1,6 @@
 import * as THREE from './three/three.module.js';
 import { Actor } from './actor.js';
-import { OBB } from './three/addons/math/OBB.js';
+import { GLTFLoader } from './three/addons/loaders/GLTFLoader.js';
 
 export class Saber extends THREE.Object3D {
 
@@ -17,6 +17,21 @@ export class Saber extends THREE.Object3D {
 
         const textureLoader = new THREE.TextureLoader();
         Saber.textureFlare0 = textureLoader.loadAsync('./textures/lensflare0.png');
+
+        //load model     
+        const gltfLoader = new GLTFLoader();
+        Saber.model = gltfLoader.loadAsync('./models/saber.glb').then(gltf => {
+            gltf.scene.scale.set(0.007, 0.007, 0.007);
+            gltf.scene.rotation.set(-Math.PI / 2, 0 , 0);
+            gltf.scene.position.set(0,0.005,0.02);
+            gltf.scene.traverse(child => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+            return gltf;
+        });
     })()
 
     static ANIMATIONS = {
@@ -39,15 +54,12 @@ export class Saber extends THREE.Object3D {
         this.scene = scene;
         this.saberColor = saberColor;
 
-        const handleGeometry = new THREE.CylinderGeometry(0.015, 0.015, Saber.handleHeight, 8, 1, false);
-        const handleMaterial = new THREE.MeshStandardMaterial({
-            color: 'grey',
-            metalness: 0.5,
-            roughness: 0.5,
-            flatShading: false,
-        });
-        const handle = new THREE.Mesh(handleGeometry, handleMaterial);
+        const handle = new THREE.Group();
         this.handle = handle;
+        Saber.model.then(gltf => {
+            const model = gltf.scene.clone();
+            handle.add(model);
+        });
 
         const blade = new THREE.Object3D();
         blade.position.set(0, Saber.handleHeight * 0.5 + Saber.bladeHeight * 0.5, 0);
@@ -267,9 +279,7 @@ export class Saber extends THREE.Object3D {
 
                 return {
                     obj: obj,
-                    intersection: {
-                        point: inters.point,
-                    }
+                    intersection: inters
                 }
             })
                 // const collisions = enemys.map((obj) => {
@@ -304,10 +314,11 @@ export class Saber extends THREE.Object3D {
                 //this.setSaberColor(0x00ff00);
                 collisions.forEach(col => {
                     const point = col.intersection.point;
+                    const distance = col.intersection.distance;
                     //translate to local space
-                    this.collisionEffect(point);
+                    this.collisionEffect(point, distance);
                     if(col.obj && col.obj.damage) //col.obj instanceof Actor
-                        col.obj.damage(1);
+                        col.obj.damage(5);
                 });
             } else {
                 //this.setSaberColor(0xff0000);
@@ -318,11 +329,18 @@ export class Saber extends THREE.Object3D {
         }
     }
 
-    collisionEffect(point) {
+    collisionEffect(point, distance) {
         if (point) {
             this.lensPlane.visible = true;
             this.lensPlane.position.copy(point);
             this.lensPlane.quaternion.copy(app.camera.quaternion);
+
+            // //global position to local position
+            // let localPoint = this.blade.worldToLocal(point);
+            // //substract vector from local point
+            // localPoint = localPoint.sub(this.bladePeak.position).normalize().multiplyScalar(0.1);
+            this.light.position.y = distance - Saber.bladeHeight * 0.5 - 0.2;
+
         } else {
             this.lensPlane.visible = false;
         }
