@@ -228,7 +228,7 @@ class App {
     }
 
     addDefaultSaber() {
-        this.saber = new Saber();
+        this.saber = new Saber(this.scene);
         this.saber.position.set(0, -0.3, -0.6);
         this.saber.setInitialRotation(-Math.PI / 4, 0, -0.7);
         this.player.camera.add(this.saber);
@@ -305,7 +305,7 @@ class App {
         this.controller1 = this.renderer.xr.getController(0);
         this.controller1.addEventListener('connected', (e) => {
             this.controller1.gamepad = e.data.gamepad;
-            this.saber1 = new Saber();
+            this.saber1 = new Saber(this.scene);
             this.saber1.initAudio(this.listener);
             this.controller1.add( this.saber1 );
         });
@@ -317,7 +317,7 @@ class App {
         this.controller2 = this.renderer.xr.getController(1);
         this.controller2.addEventListener('connected', (e) => {
             this.controller2.gamepad = e.data.gamepad;
-            this.saber2 = new Saber();
+            this.saber2 = new Saber(this.scene);
             this.saber2.initAudio(this.listener);
             this.controller2.add( this.saber2 );
         });

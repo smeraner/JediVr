@@ -9,7 +9,7 @@ export class Actor extends THREE.Object3D {
     damageMultiplyer = 0.1;
     onFloor = false;
 
-    colliderHelper = null;
+    colliderMesh = null;
     colliderHeight = 0.3;
     colliderRadius = 0.5;
     collider = new Capsule(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, this.colliderHeight, 0), this.colliderRadius);
@@ -33,13 +33,13 @@ export class Actor extends THREE.Object3D {
         //debug
         const capsuleGeometry = new THREE.CapsuleGeometry(this.collider.radius, this.collider.end.y - this.collider.start.y);
         const capsuleMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true });
-        const colliderHelper = new THREE.Mesh(capsuleGeometry, capsuleMaterial);
-        colliderHelper.userData.obj = this;
-        colliderHelper.position.copy(this.collider.start);
-        this.colliderHelper = colliderHelper;
-        this.scene.add(colliderHelper);
+        const colliderMesh = new THREE.Mesh(capsuleGeometry, capsuleMaterial);
+        colliderMesh.userData.obj = this;
+        colliderMesh.position.copy(this.collider.start);
+        this.colliderMesh = colliderMesh;
+        this.scene.add(colliderMesh);
 
-        this.colliderHelper.visible = Actor.debug;
+        this.colliderMesh.visible = Actor.debug;
     }
 
     /**
@@ -58,7 +58,7 @@ export class Actor extends THREE.Object3D {
                 this.velocity.addScaledVector(result.normal, - result.normal.dot(this.velocity));
             }
             this.collider.translate(result.normal.multiplyScalar(result.depth));
-            this.colliderHelper.position.copy(this.collider.start);
+            this.colliderMesh.position.copy(this.collider.start);
         }
     }
 
@@ -82,7 +82,7 @@ export class Actor extends THREE.Object3D {
         this.position.copy(this.collider.start);
         this.position.y -= this.collider.radius;
 
-        this.colliderHelper.visible = Actor.debug;
+        this.colliderMesh.visible = Actor.debug;
     }
 
     /**
@@ -117,13 +117,13 @@ export class Actor extends THREE.Object3D {
      */
     die() {
         console.log(this, 'dead');
-        this.colliderHelper.layers.disable(0);
+        this.colliderMesh.layers.disable(0);
     }
 
     /**
      * Dispose resources.
      */
     dispose() {
-        this.scene.remove(this.colliderHelper);
+        this.scene.remove(this.colliderMesh);
     }
 }

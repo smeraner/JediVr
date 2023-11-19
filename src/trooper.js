@@ -39,7 +39,7 @@ export class Trooper extends Actor {
         super(gravity, scene);
 
         this.collider = new Capsule(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, this.colliderHeight, 0), this.colliderRadius);
-        this.colliderHelper.geometry = new THREE.CapsuleGeometry(this.collider.radius, this.collider.end.y - this.collider.start.y);
+        this.colliderMesh.geometry = new THREE.CapsuleGeometry(this.collider.radius, this.collider.end.y - this.collider.start.y);
 
         Trooper.trooperModel.then(gltf => {
             this.model = SkeletonUtils.clone( gltf.scene );
