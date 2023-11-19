@@ -42,6 +42,9 @@
 			"metalness": 0.5,
 			"emissive": 0,
 			"metalnessMap": "9eed7c65-62c3-4498-a368-c4af7ce9f589",
+			"displacementMap": "9eed7c65-62c3-4498-a368-c4af7ce9f589",
+			"displacementScale": 0.2,
+			"displacementBias": 0,
 			"envMapIntensity": 1,
 			"blendColor": 0
 		},

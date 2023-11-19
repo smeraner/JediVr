@@ -16,6 +16,7 @@ import { Player } from './player.js';
 import { World } from './world.js';
 import { Saber } from './saber.js';
 import { Trooper } from './trooper.js';
+import { Actor } from './actor.js';
 
 class App {
 
@@ -53,6 +54,8 @@ class App {
     constructor() {
         this.clock = new THREE.Clock();
         this.gui = new GUI({ width: 200 });
+        this.initDebugGui();
+
         this.container = document.createElement('div');
         document.body.appendChild(this.container);
 
@@ -117,6 +120,17 @@ class App {
         });
 
         this.renderer.setAnimationLoop(this.animate.bind(this));
+    }
+
+    initDebugGui() {
+        this.gui.add({ debugActor: false }, 'debugActor')
+            .onChange(function (value) {
+                Actor.debug = value;
+            });
+        this.gui.add({ debugSaber: false }, 'debugSaber')
+            .onChange(function (value) {
+                Saber.debug = value;
+            });
     }
 
     /**
@@ -233,17 +247,21 @@ class App {
             new THREE.Vector3(1.6, -1.6, -7),
         ];
 
-        const spawn = (spawnPosition)=>{
-            const trooper = new Trooper(this.GRAVITY);
+        const spawn = (spawnPosition, respawn=true)=>{
+            const trooper = new Trooper(this.GRAVITY, this.scene);
             trooper.rotation.set(0, Math.PI, 0);
             trooper.setPosition(spawnPosition.x, spawnPosition.y, spawnPosition.z);
-            trooper.addEventListener('dead', () => {
+
+            const deadHandler = (e) => {
+                trooper.removeEventListener('dead', deadHandler);
                 setTimeout(() => {
                     this.scene.remove(trooper);
+                    trooper.dispose();
                     this.enemys.splice(this.enemys.indexOf(trooper), 1);
-                    spawn(spawnPositions);
+                    if(respawn) spawn(spawnPosition,respawn);
                 }, 3000);
-            });
+            };
+            trooper.addEventListener('dead', deadHandler.bind(this));
             this.enemys.push(trooper);
             this.scene.add(trooper);
         }

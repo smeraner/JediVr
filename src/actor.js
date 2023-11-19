@@ -9,25 +9,36 @@ export class Actor extends THREE.Object3D {
     damageMultiplyer = 0.1;
     onFloor = false;
 
-    collider = new Capsule(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0.3, 0), 0.5);
+    colliderHelper = null;
+    colliderHeight = 0.3;
+    colliderRadius = 0.5;
+    collider = new Capsule(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, this.colliderHeight, 0), this.colliderRadius);
 
     velocity = new THREE.Vector3();
     direction = new THREE.Vector3();
 
-    constructor(gravity) {
+    /**
+     * 
+     * @param {number} gravity 
+     * @param {THREE.Scene} scene 
+     */
+    constructor(gravity, scene) {
         super();
 
         this.gravity = gravity;
+        this.scene = scene;
+
         this.addEventListener('dead', this.die);
 
-        if (Actor.debug) {
-            const capsuleGeometry = new THREE.CapsuleGeometry(this.collider.radius, this.collider.end.y - this.collider.start.y);
-            const capsuleMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true });
-            const capsule = new THREE.Mesh(capsuleGeometry, capsuleMaterial);
-            capsule.position.copy(this.collider.start);
-            this.colliderHelper = capsule;
-            app.scene.add(capsule);
-        }
+        //debug
+        const capsuleGeometry = new THREE.CapsuleGeometry(this.collider.radius, this.collider.end.y - this.collider.start.y);
+        const capsuleMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true });
+        const colliderHelper = new THREE.Mesh(capsuleGeometry, capsuleMaterial);
+        colliderHelper.position.copy(this.collider.start);
+        this.colliderHelper = colliderHelper;
+        this.colliderHelper.visible = Actor.debug;
+        this.scene.add(colliderHelper);
+
     }
 
     /**
@@ -52,6 +63,10 @@ export class Actor extends THREE.Object3D {
         }
     }
 
+    /**
+     * @param {number} deltaTime
+     * @param {World} world
+     */
     animate(deltaTime, world) {
         let damping = Math.exp(- 4 * deltaTime) - 1;
         if (!this.onFloor) {
@@ -65,25 +80,52 @@ export class Actor extends THREE.Object3D {
 
         this.worldCollitions(world);
 
-        this.position.copy(this.collider.end);
+        this.position.copy(this.collider.start);
         this.position.y -= this.collider.radius;
+
+        this.colliderHelper.visible = Actor.debug;
     }
 
+    /**
+     * Set the position of the actor.
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
+     */
     setPosition(x, y, z) {
         this.position.set(x, y, z);
         this.collider.start.set(x, y, z);
-        this.collider.end.set(x, y + 0.3, z);
+        this.collider.end.set(x, y + this.colliderHeight, z);
+        //this.colliderHelper.position.copy(this.collider.start);
     }
 
+    /**
+     * Process inbound damage to the actor.
+     * @param {number} amount
+     */
     damage(amount) {
+        if(this.health === 0) return;
+        
         this.health -= amount * this.damageMultiplyer;
         if (this.health <= 0) {
             this.dispatchEvent({ type: 'dead' });
+            this.health = 0;
         }
     }
 
+    /**
+     * Handles the actor's death.
+     */
     die() {
-        this.health = 0;
         console.log(this, 'dead');
+    }
+
+    /**
+     * Dispose resources.
+     */
+    dispose() {
+        if(Actor.debug) {
+            this.scene.remove(this.colliderHelper);
+        }
     }
 }

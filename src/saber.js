@@ -227,6 +227,7 @@ export class Saber extends THREE.Object3D {
             }
         }
         this.collide(world,enemys);
+        this.boundsHelper.visible = Saber.debug;
     }
 
     collide(world, enemys) {
@@ -239,15 +240,18 @@ export class Saber extends THREE.Object3D {
                 let intersection = null;
                 const intersectBox = this.bounds.intersectsBox(box3Obj);
                 if(intersectBox){
-                    //intersection = this.bounds.intersect(box3Obj);
-                    const rayOrigin = this.handle.getWorldPosition(new THREE.Vector3());
-                    const rayDirection = this.bladePeak.getWorldPosition(new THREE.Vector3()).sub(rayOrigin).normalize();
-                    this.raycaster.set(rayOrigin.clone(), rayDirection.clone());
-                    const rayIntersections = this.raycaster.intersectObject(obj,true);
-                    if(rayIntersections.length){
-                        //console.log(rayIntersections)
-                        intersection = rayIntersections[0];
+                    intersection = {
+                        point: this.position.clone()
                     }
+                    // //intersection = this.bounds.intersect(box3Obj);
+                    // const rayOrigin = this.handle.getWorldPosition(new THREE.Vector3());
+                    // const rayDirection = this.bladePeak.getWorldPosition(new THREE.Vector3()).sub(rayOrigin).normalize();
+                    // this.raycaster.set(rayOrigin.clone(), rayDirection.clone());
+                    // const rayIntersections = this.raycaster.intersectObject(obj,true);
+                    // if(rayIntersections.length){
+                    //     //console.log(rayIntersections)
+                    //     intersection = rayIntersections[0];
+                    // }
                 }
 
                 return {

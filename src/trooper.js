@@ -3,6 +3,7 @@ import * as THREE from './three/three.module.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { Actor } from './actor.js';
 import { GLTFLoader } from './three/addons/loaders/GLTFLoader.js';
+import { Capsule } from './three/addons/math/Capsule.js';
 
 /**
  * Trooper is a NPC enemy that will guard the world
@@ -27,9 +28,18 @@ export class Trooper extends Actor {
     })()
 
     damageMultiplyer = 0.25;
+    colliderHeight = 0.9;
 
-    constructor(gravity) {
-        super(gravity);
+    /**
+     * 
+     * @param {number} gravity 
+     * @param {THREE.Scene} scene 
+     */
+    constructor(gravity, scene) {
+        super(gravity, scene);
+
+        this.collider = new Capsule(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, this.colliderHeight, 0), this.colliderRadius);
+        this.colliderHelper.geometry = new THREE.CapsuleGeometry(this.collider.radius, this.collider.end.y - this.collider.start.y);
 
         Trooper.trooperModel.then(gltf => {
             this.model = SkeletonUtils.clone( gltf.scene );
@@ -72,9 +82,7 @@ export class Trooper extends Actor {
     die() {
         super.die();
 
-        this.actions.forEach(action => {
-            action.stop();
-        });
+        this.mixer.stopAllAction();
         this.rotation.x = -Math.PI/2;
         this.setAnimationWeight(this.TPoseAction, 1);
     }
@@ -84,6 +92,18 @@ export class Trooper extends Actor {
         super.animate(deltaTime, world);
 
         this.mixer.update(deltaTime);
+    }
+
+    dispose() {
+        super.dispose();
+        this.mixer.stopAllAction();
+        this.mixer.uncacheRoot(this.model);
+        this.model.traverse(child => {
+            if (child.isMesh) {
+                child.material.dispose();
+            }
+            if ( child.isSkinnedMesh ) child.skeleton.dispose();
+        });
     }
 
 }
