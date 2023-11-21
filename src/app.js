@@ -179,7 +179,7 @@ class App {
         ];
 
         const spawn = (spawnPosition, respawn=true)=>{
-            const trooper = new Trooper(this.GRAVITY, this.scene);
+            const trooper = new Trooper(this.GRAVITY, this.scene, this.audioListenerPromise);
             trooper.rotation.set(0, Math.PI, 0);
             trooper.setPosition(spawnPosition.x, spawnPosition.y, spawnPosition.z);
 

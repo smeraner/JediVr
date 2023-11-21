@@ -39,12 +39,15 @@ export class Trooper extends Actor {
      * 
      * @param {number} gravity 
      * @param {THREE.Scene} scene 
+     * @param {Promise<THREE.AudioListener>} audioListenerPromise
      */
-    constructor(gravity, scene) {
+    constructor(gravity, scene, audioListenerPromise) {
         super(gravity, scene);
 
         this.collider = new Capsule(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, this.colliderHeight, 0), this.colliderRadius);
         this.colliderMesh.geometry = new THREE.CapsuleGeometry(this.collider.radius, this.collider.end.y - this.collider.start.y);
+
+        this.initAudio(audioListenerPromise);
 
         Trooper.model.then(gltf => {
             this.model = SkeletonUtils.clone( gltf.scene );
@@ -75,7 +78,16 @@ export class Trooper extends Actor {
             //     this.add(box);
             // }
         });
+    }
 
+    async initAudio(audioListenerPromise) {
+        const audioListener = await audioListenerPromise;
+        const bufferDead = await Trooper.soundBufferDead;
+        const soundDead = new THREE.PositionalAudio(audioListener);
+        soundDead.setBuffer(bufferDead);
+        soundDead.setVolume(0.5);
+        this.add(soundDead);
+        this.soundDead = soundDead;
     }
 
     setAnimationWeight(action, weight) {
@@ -86,7 +98,7 @@ export class Trooper extends Actor {
 
     die() {
         super.die();
-
+        if (this.soundDead) this.soundDead.play();
         this.mixer.stopAllAction();
         this.rotation.x = -Math.PI/2;
         this.setAnimationWeight(this.TPoseAction, 1);
