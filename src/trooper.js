@@ -14,6 +14,10 @@ export class Trooper extends Actor {
     static debug = false;
     static model = null;
     static #staticConstructorDummyResult = (function () {
+        //load audio     
+        const audioLoader = new THREE.AudioLoader();
+        Trooper.soundBufferDead = audioLoader.loadAsync('./sounds/trooper_dead.ogg');
+
         //load model     
         const gltfLoader = new GLTFLoader();
         Trooper.model = gltfLoader.loadAsync('./models/trooper.glb').then(gltf => {
@@ -29,6 +33,7 @@ export class Trooper extends Actor {
 
     damageMultiplyer = 0.25;
     colliderHeight = 1.2;
+    mixer = null;
 
     /**
      * 
@@ -91,7 +96,7 @@ export class Trooper extends Actor {
     animate(deltaTime, world) {
         super.animate(deltaTime, world);
 
-        this.mixer.update(deltaTime);
+        if(this.mixer) this.mixer.update(deltaTime);
     }
 
     dispose() {

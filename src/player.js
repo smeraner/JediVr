@@ -12,7 +12,12 @@ export class Player extends THREE.Object3D {
     velocity = new THREE.Vector3();
     direction = new THREE.Vector3();
 
-    constructor(scene, gravity) {
+    /**
+     * @param {THREE.Scene} scene
+     * @param {Promise<THREE.AudioListener>} audioListenerPromise
+     * @param {number} gravity
+     */
+    constructor(scene, audioListenerPromise, gravity) {
         super();
 
         this.scene = scene;
@@ -24,6 +29,9 @@ export class Player extends THREE.Object3D {
         this.camera.position.y = 1.5;
         this.add(this.camera);
         this.scene.add(this);
+
+        //connect audio listener as soon as it is ready
+        this.initAudio(audioListenerPromise);
 
         if (Player.debug) {
             const capsuleGeometry = new THREE.CapsuleGeometry(this.collider.radius, this.collider.end.y - this.collider.start.y);
@@ -37,6 +45,11 @@ export class Player extends THREE.Object3D {
 
     getCamera() {
         return this.camera;
+    }
+
+    async initAudio(audioListenerPromise) {
+        const audioListener = await audioListenerPromise;
+        this.camera.add(audioListener);
     }
 
     /**

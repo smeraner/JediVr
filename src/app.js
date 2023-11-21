@@ -51,6 +51,8 @@ class App {
     vector2 = new THREE.Vector3();
     vector3 = new THREE.Vector3();
 
+    audioListenerPromise = null;
+
     constructor() {
         this.clock = new THREE.Clock();
         this.gui = new GUI({ width: 200 });
@@ -70,25 +72,18 @@ class App {
         this.container.appendChild(this.renderer.domElement);
         document.body.appendChild(VRButton.createButton(this.renderer));
 
-        // // Create the effect composer.
-        // this.composer = new EffectComposerXR(this.renderer, {
-        //     //frameBufferType: HalfFloatType
-        // });
-
     }
 
     async init() {
+        this.initAudio();
+        
         await this.initScene();
-        // this.composer.addPass(new RenderPassXR(this.scene, this.camera));
-        // this.composer.addPass(new EffectPassXR(this.camera, new BloomEffect()));
 
         this.setupXR();
-        await this.initAudio();
-
+        
         //init audio on first click
         document.addEventListener('mousedown', async () => this.onFirstUserAction(), { once: true });
-        window.addEventListener('blur', async () => this.stopAudio());
-        window.addEventListener('focus', async () => this.playAudio());
+
         this.renderer.xr.addEventListener('sessionstart', async () => {
             this.onFirstUserAction()
             this.removeDefaultSaber();
@@ -107,10 +102,6 @@ class App {
             document.body.requestPointerLock();
             this.mouseTime = performance.now();
         });
-
-        // document.addEventListener('mouseup', () => {
-        //     if (document.pointerLockElement !== null) this.throwBall();
-        // });
 
         document.body.addEventListener('mousemove', (event) => {
             if (document.pointerLockElement === document.body) {
@@ -138,14 +129,15 @@ class App {
      * Plays audio and adds a light saber to the player's scene.
      */
     async onFirstUserAction() {
-        this.playAudio();
+        //init audio
+        const listener = new THREE.AudioListener();
+        this.setAudioListener(listener);
+
+        window.addEventListener('blur', async () => listener.context.suspend());
+        window.addEventListener('focus', async () => listener.context.resume());
 
         //init saber
-        //debug add light saber to player
-        if(!this.renderer.xr.isPresenting) {
-            this.addDefaultSaber();
-        }
-        await this.saber.initAudio(this.listener);
+        this.addDefaultSaber();
     }
 
     /***
@@ -154,56 +146,15 @@ class App {
     async initScene() {
 
         //init world
-        this.world = new World(this.gui);
+        this.world = new World(this.audioListenerPromise, this.gui);
         this.scene = await this.world.loadScene();
 
         //init player
-        this.player = new Player(this.scene, this.GRAVITY);
+        this.player = new Player(this.scene, this.audioListenerPromise, this.GRAVITY);
         this.camera = this.player.getCamera();
 
         //init trooper
         this.initEnemies(this.world.enemySpawnPoints);
-
-        //init effect postprocessing
-        /*
-        const bloomLayer = new THREE.Layers();
-        bloomLayer.set( this.BLOOM_SCENE );
-        this.bloomLayer = bloomLayer;
-
-        const renderScene = new RenderPass( this.scene, this.camera );
-
-        const bloomPass = new UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight ), 1.5, 0.4, 0.85 );
-        bloomPass.threshold = 0;
-        bloomPass.strength = 0.7;
-        bloomPass.radius = 0.05;
-
-        const bloomComposer = new EffectComposer( this.renderer );
-        bloomComposer.renderToScreen = false;
-        bloomComposer.addPass( renderScene );
-        bloomComposer.addPass( bloomPass );
-        this.bloomComposer = bloomComposer;
-
-        const mixPass = new ShaderPass(
-            new THREE.ShaderMaterial( {
-                uniforms: {
-                    baseTexture: { value: null },
-                    bloomTexture: { value: bloomComposer.renderTarget2.texture }
-                },
-                vertexShader: document.getElementById( 'vertexshader' ).textContent,
-                fragmentShader: document.getElementById( 'fragmentshader' ).textContent,
-                defines: {}
-            } ), 'baseTexture'
-        );
-        mixPass.needsSwap = true;
-
-        const outputPass = new OutputPass();
-
-        const finalComposer = new EffectComposer( this.renderer );
-        finalComposer.addPass( renderScene );
-        finalComposer.addPass( mixPass );
-        finalComposer.addPass( outputPass );
-        this.finalComposer = finalComposer;
-        */
 
         //spehere init
         for (let i = 0; i < this.NUM_SPHERES; i++) {
@@ -220,26 +171,6 @@ class App {
             });
         }
 
-    }
-
-    defaultSaberToggle(e) {
-        if (e.button === 2) this.saber.toggle();
-        if (e.button === 0) this.saber.swing();
-    }
-
-    addDefaultSaber() {
-        this.saber = new Saber(this.scene);
-        this.saber.position.set(0, -0.3, -0.6);
-        this.saber.setInitialRotation(-Math.PI / 4, 0, -0.7);
-        this.player.camera.add(this.saber);
-
-        document.addEventListener('mouseup', this.defaultSaberToggle.bind(this));
-    }
-
-    removeDefaultSaber() {
-        this.player.camera.remove(this.saber);
-        this.saber = null;
-        document.removeEventListener('mouseup', this.defaultSaberToggle);
     }
 
     initEnemies(spawnPositions) {
@@ -271,32 +202,31 @@ class App {
         });
     }
 
-    async initAudio() {
-        this.listener = new THREE.AudioListener();
-        this.camera.add(this.listener);
-
-        this.sound = new THREE.Audio(this.listener);
-        const audioLoader = new THREE.AudioLoader();
-        const initSound = await audioLoader.loadAsync('sounds/background_breath.ogg');
-        this.sound.setBuffer(initSound);
-        this.sound.setLoop(true);
-        this.sound.setVolume(0.3);
-
-
-        // audioLoader.load('sounds/358232_j_s_song.ogg', function (buffer) {
-        //     sound.setBuffer(buffer);
-        //     sound.setLoop(true);
-        //     sound.setVolume(0.1);
-        //     sound.play();
-        // }); 
+    initAudio() {
+        this.audioListenerPromise = new Promise((resolve) => {
+            this.setAudioListener = resolve;
+        });
+        return this.audioListenerPromise;
     }
 
-    playAudio() {
-        this.sound.play();
+    defaultSaberToggle(e) {
+        if (e.button === 2) this.saber.toggle();
+        if (e.button === 0) this.saber.swing();
     }
 
-    stopAudio() {
-        this.sound.stop();
+    addDefaultSaber() {
+        this.saber = new Saber(this.scene, this.audioListenerPromise);
+        this.saber.position.set(0, -0.3, -0.6);
+        this.saber.setInitialRotation(-Math.PI / 4, 0, -0.7);
+        this.player.camera.add(this.saber);
+
+        document.addEventListener('mouseup', this.defaultSaberToggle.bind(this));
+    }
+
+    removeDefaultSaber() {
+        this.player.camera.remove(this.saber);
+        this.saber = null;
+        document.removeEventListener('mouseup', this.defaultSaberToggle);
     }
 
     setupXR() {
@@ -305,8 +235,7 @@ class App {
         this.controller1 = this.renderer.xr.getController(0);
         this.controller1.addEventListener('connected', (e) => {
             this.controller1.gamepad = e.data.gamepad;
-            this.saber1 = new Saber(this.scene);
-            this.saber1.initAudio(this.listener);
+            this.saber1 = new Saber(this.scene, this.audioListenerPromise);
             this.controller1.add( this.saber1 );
         });
         this.controller1.addEventListener('disconnected', (e) => {
@@ -317,8 +246,7 @@ class App {
         this.controller2 = this.renderer.xr.getController(1);
         this.controller2.addEventListener('connected', (e) => {
             this.controller2.gamepad = e.data.gamepad;
-            this.saber2 = new Saber(this.scene);
-            this.saber2.initAudio(this.listener);
+            this.saber2 = new Saber(this.scene, this.audioListenerPromise);
             this.controller2.add( this.saber2 );
         });
         this.controller2.addEventListener('disconnected', (e) => {

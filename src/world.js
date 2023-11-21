@@ -6,15 +6,27 @@ import { Octree } from './three/addons/math/Octree.js';
 export class World extends THREE.Object3D {
 
     static debug = false;
+    static #staticConstructorDummyResult = (function () {
+        //load audio     
+        const audioLoader = new THREE.AudioLoader();
+        World.soundBuffer = audioLoader.loadAsync('./sounds/background_breath.ogg');
+    })()
+
     worldOctree = new Octree();
 
-    constructor(gui) {
+    /**
+     * @param {Promise<THREE.AudioListener>} audioListenerPromise
+     * @param {GUI} gui
+     */
+    constructor(audioListenerPromise, gui) {
         super();
 
         this.gui = gui;
         this.enemySpawnPoints = [];
 
         this.objectLoader = new THREE.ObjectLoader();
+
+        this.initAudio(audioListenerPromise);
 
         // const fillLight1 = new THREE.HemisphereLight(0x8dc1de, 0x00668d, 1.5);
         // fillLight1.position.set(2, 1, 1);
@@ -42,6 +54,16 @@ export class World extends THREE.Object3D {
         // this.gltfLoader = new GLTFLoader();
         // this.gltfLoader.setPath('./models/gltf/');
 
+    }
+
+    async initAudio(audioListenerPromise) {
+        const audioListener = await audioListenerPromise;
+        const soundBuffer = await World.soundBuffer;
+        this.sound = new THREE.Audio(audioListener);
+        this.sound.setBuffer(soundBuffer);
+        this.sound.setLoop(true);
+        this.sound.setVolume(0.3);
+        this.sound.play();
     }
 
     async loadScene(url = './models/scene_ship.json') {

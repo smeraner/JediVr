@@ -46,13 +46,16 @@ export class Saber extends THREE.Object3D {
 
     /**
      * @param {THREE.Scene} scene
+     * @param {Promise<THREE.AudioListener>} audioListenerPromise
      * @param {String} saberColor white, red or limegreen
      */
-    constructor(scene, saberColor = 0xff0000) {
+    constructor(scene, audioListenerPromise, saberColor = 0xff0000) {
         super();
 
         this.scene = scene;
         this.saberColor = saberColor;
+
+        this.initAudio(audioListenerPromise);
 
         const handle = new THREE.Group();
         this.handle = handle;
@@ -150,7 +153,8 @@ export class Saber extends THREE.Object3D {
         this.blade.children[3].color.set(saberColor);
     }
 
-    async initAudio(audioListener) {
+    async initAudio(audioListenerPromise) {
+        const audioListener = await audioListenerPromise;
         const bufferHumming = await Saber.soundBufferHumming;
         const soundHumming = new THREE.PositionalAudio(audioListener);
         soundHumming.setBuffer(bufferHumming);
