@@ -221,14 +221,17 @@ class App {
         this.saber.setInitialRotation(-Math.PI / 4, 0, -0.7);
         this.player.camera.add(this.saber);
 
+        setTimeout(() => {
+            this.saber.on();
+            document.addEventListener('mouseup', this.defaultSaberToggle.bind(this));
+        }, 500);
+
         this.hand = new Hand(this.scene);
         this.hand.position.set(-0.2,-0.4, -0.6);
         this.hand.scale.set(-1,1,1);
         this.hand.rotation.set(-Math.PI,0,2.2);
         //this.hand.setInitialRotation(-Math.PI / 4, 0, -0.7);
         this.player.camera.add(this.hand);
-
-        document.addEventListener('mouseup', this.defaultSaberToggle.bind(this));
     }
 
     removeDefaultSaber() {
