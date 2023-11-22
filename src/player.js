@@ -33,14 +33,13 @@ export class Player extends THREE.Object3D {
         //connect audio listener as soon as it is ready
         this.initAudio(audioListenerPromise);
 
-        if (Player.debug) {
-            const capsuleGeometry = new THREE.CapsuleGeometry(this.collider.radius, this.collider.end.y - this.collider.start.y);
-            const capsuleMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true });
-            const capsule = new THREE.Mesh(capsuleGeometry, capsuleMaterial);
-            capsule.position.copy(this.collider.start);
-            this.colliderHelper = capsule;
-            this.scene.add(capsule);
-        }
+        const capsuleGeometry = new THREE.CapsuleGeometry(this.collider.radius, this.collider.end.y - this.collider.start.y);
+        const capsuleMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true });
+        const colliderMesh = new THREE.Mesh(capsuleGeometry, capsuleMaterial);
+        colliderMesh.position.copy(this.collider.start);
+        this.colliderMesh = colliderMesh;
+        this.scene.add(colliderMesh);
+        this.colliderMesh.visible = Player.debug;
     }
 
     getCamera() {
@@ -68,9 +67,7 @@ export class Player extends THREE.Object3D {
                 this.velocity.addScaledVector(result.normal, - result.normal.dot(this.velocity));
             }
             this.collider.translate(result.normal.multiplyScalar(result.depth));
-            if(Player.debug) {
-                this.colliderHelper.position.copy(this.collider.start);
-            }
+            this.colliderMesh.position.copy(this.collider.start);
         }
     }
 
@@ -93,6 +90,8 @@ export class Player extends THREE.Object3D {
 
         this.position.copy(this.collider.end);
         this.position.y -= this.collider.radius;
+
+        this.colliderMesh.visible = Player.debug;
     }
 
     getForwardVector() {

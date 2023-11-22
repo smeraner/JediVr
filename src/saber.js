@@ -273,7 +273,7 @@ export class Saber extends THREE.Object3D {
             const rayIntersections = this.raycaster.intersectObjects(colliders, true);
 
             const collisions = rayIntersections.map((inters) => {
-                let obj = inters.object.userData.obj;
+                let obj = inters.object.userData.obj || inters.object;
 
                 return {
                     obj: obj,

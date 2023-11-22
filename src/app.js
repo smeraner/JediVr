@@ -115,6 +115,10 @@ class App {
     }
 
     initDebugGui() {
+        this.gui.add({ debugPlayer: false }, 'debugPlayer')
+            .onChange(function (value) {
+                Player.debug = value;
+            });
         this.gui.add({ debugActor: false }, 'debugActor')
             .onChange(function (value) {
                 Actor.debug = value;
@@ -123,6 +127,10 @@ class App {
             .onChange(function (value) {
                 Saber.debug = value;
             });
+        this.gui.add({ debugWorld: false }, 'debugWorld')
+            .onChange(function (value) {
+                this.world.helper.visible = value;
+            }.bind(this));
     }
 
     /**
@@ -152,6 +160,7 @@ class App {
 
         //init player
         this.player = new Player(this.scene, this.audioListenerPromise, this.GRAVITY);
+        this.player.position.copy(this.world.playerSpawnPoint);
         this.camera = this.player.getCamera();
 
         //init trooper
@@ -534,6 +543,8 @@ class App {
             this.enemys.forEach(enemy => {
                 enemy.animate(deltaTime, this.world);
             });
+
+            this.world.animate(deltaTime);
 
             this.updateSpheres(deltaTime);
 

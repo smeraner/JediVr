@@ -23,6 +23,7 @@ export class World extends THREE.Object3D {
 
         this.gui = gui;
         this.enemySpawnPoints = [];
+        this.playerSpawnPoint = new THREE.Vector3();
 
         this.objectLoader = new THREE.ObjectLoader();
 
@@ -72,7 +73,7 @@ export class World extends THREE.Object3D {
 
         const map = scene.children.find(child=> child.name==="collision-world.glb");
         this.map = map;
-        this.worldOctree.fromGraphNode(map);
+        this.rebuildOctree();
 
         //find object with name "Hemisphere" and change material to repeat
         scene.traverse(child => {
@@ -88,6 +89,19 @@ export class World extends THREE.Object3D {
                 });
             } else if (child.name === "Enemy") {
                 this.enemySpawnPoints.push(child.position);
+            } else if (child.name === "Player") {
+                this.playerSpawnPoint.copy(child.position);
+            }
+
+            //damageable objects
+            if(child.isMesh && child.userData && child.userData.health) {
+                child.damage = (damage) => {
+                    child.userData.health -= damage;
+                    if(child.userData.health <= 0) {
+                        child.parent.remove(child);
+                        this.rebuildOctree();
+                    }
+                }
             }
                 
             // else if (child.isMesh && child.name === "collision-world.glb") {
@@ -101,60 +115,17 @@ export class World extends THREE.Object3D {
         const helper = new OctreeHelper(this.worldOctree);
         helper.visible = false;
         scene.add(helper);
-
-        this.gui.add({ debug: false }, 'debug')
-            .onChange(function (value) {
-                helper.visible = value;
-            });
+        this.helper = helper;
 
         return scene;
+    }
 
-        // // Create the panoramic sphere geometery
-        // const panoSphereGeo = new THREE.SphereGeometry(32, 256, 256);
-        // // Create the panoramic sphere material
-        // const panoSphereMat = new THREE.MeshStandardMaterial({
-        //     side: THREE.BackSide,
-        //     displacementScale: - 4.0
-        // });
-        // // Create the panoramic sphere mesh
-        // const sphere = new THREE.Mesh(panoSphereGeo, panoSphereMat);
-        // this.scene.add(sphere);
+    animate(deltaTime) {
 
-        // const panoramicTexture = await this.textureLoader.loadAsync('./textures/kandao3.jpg')
-        // panoramicTexture.colorSpace = THREE.SRGBColorSpace;
-        // panoramicTexture.minFilter = THREE.NearestFilter;
-        // panoramicTexture.generateMipmaps = false;
-        // sphere.material.map = panoramicTexture;
+    }
 
-        // const panoramicDepth = await this.textureLoader.loadAsync('./textures/kandao3_depthmap.jpg')
-        // panoramicDepth.minFilter = THREE.NearestFilter;
-        // panoramicDepth.generateMipmaps = false;
-        // sphere.material.displacementMap = panoramicDepth;
-
-        // // const worldTexture = await this.textureLoader.loadAsync('./textures/brick_bump.jpg')
-        // // worldTexture.minFilter = THREE.NearestFilter;
-        // // worldTexture.generateMipmaps = false;
-        // // worldTexture.wrapS = THREE.RepeatWrapping;
-        // // worldTexture.wrapT = THREE.RepeatWrapping;
-
-        // const gltf = await this.gltfLoader.loadAsync('collision-world.glb');
-        // this.scene.add(gltf.scene);
-        // this.worldOctree.fromGraphNode(gltf.scene);
-        // gltf.scene.traverse(child => {
-        //     if (child.isMesh) {
-        //         child.castShadow = true;
-        //         child.receiveShadow = true;
-
-        //         if (child.material.map) {
-        //             // child.material.map = worldTexture;
-        //             // child.material.map.flipY = false;
-        //             // child.material.map.repeat.set(1, 1);
-        //             child.material.map.anisotropy = 4;
-        //         }
-        //     }
-        // });
-
-
+    rebuildOctree() {
+        this.worldOctree.fromGraphNode(this.map);
     }
 
 }
