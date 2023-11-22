@@ -24,12 +24,6 @@ export class Saber extends THREE.Object3D {
             gltf.scene.scale.set(0.007, 0.007, 0.007);
             gltf.scene.rotation.set(-Math.PI / 2, 0 , 0);
             gltf.scene.position.set(0,0.005,0.02);
-            gltf.scene.traverse(child => {
-                if (child.isMesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
-                }
-            });
             return gltf;
         });
     })()

@@ -15,6 +15,7 @@ import { createText } from './three/addons/webxr/Text2D.js';
 import { Player } from './player.js';
 import { World } from './world.js';
 import { Saber } from './saber.js';
+import { Hand } from './hand.js';
 import { Trooper } from './trooper.js';
 import { Actor } from './actor.js';
 
@@ -216,9 +217,16 @@ class App {
 
     addDefaultSaber() {
         this.saber = new Saber(this.scene, this.audioListenerPromise);
-        this.saber.position.set(0, -0.3, -0.6);
+        this.saber.position.set(0.2,-0.3, -0.6);
         this.saber.setInitialRotation(-Math.PI / 4, 0, -0.7);
         this.player.camera.add(this.saber);
+
+        this.hand = new Hand(this.scene);
+        this.hand.position.set(-0.2,-0.4, -0.6);
+        this.hand.scale.set(-1,1,1);
+        this.hand.rotation.set(-Math.PI,0,2.2);
+        //this.hand.setInitialRotation(-Math.PI / 4, 0, -0.7);
+        this.player.camera.add(this.hand);
 
         document.addEventListener('mouseup', this.defaultSaberToggle.bind(this));
     }
