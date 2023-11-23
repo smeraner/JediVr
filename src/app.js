@@ -539,6 +539,7 @@ class App {
             if(this.saber) this.saber.animate(deltaTime, this.world, this.enemys);
             if(this.saber1) this.saber1.animate(deltaTime, this.world, this.enemys);
             if(this.saber2) this.saber2.animate(deltaTime, this.world, this.enemys);
+            if(this.hand) this.hand.animate(deltaTime);
 
             this.enemys.forEach(enemy => {
                 enemy.animate(deltaTime, this.world);
