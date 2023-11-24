@@ -145,8 +145,10 @@ class App {
         window.addEventListener('blur', async () => listener.context.suspend());
         window.addEventListener('focus', async () => listener.context.resume());
 
-        //init saber
-        this.addDefaultSaber();
+        setTimeout(() => {
+            this.saber.on();
+            document.addEventListener('mouseup', this.defaultSaberToggle.bind(this));
+        }, 500);
     }
 
     /***
@@ -162,6 +164,9 @@ class App {
         this.player = new Player(this.scene, this.audioListenerPromise, this.GRAVITY);
         this.player.position.copy(this.world.playerSpawnPoint);
         this.camera = this.player.getCamera();
+
+        //init saber
+        this.addDefaultSaber();
 
         //init trooper
         this.initEnemies(this.world.enemySpawnPoints);
@@ -229,11 +234,6 @@ class App {
         this.saber.position.set(0.2,-0.3, -0.6);
         this.saber.setInitialRotation(-Math.PI / 4, 0, -0.7);
         this.player.camera.add(this.saber);
-
-        setTimeout(() => {
-            this.saber.on();
-            document.addEventListener('mouseup', this.defaultSaberToggle.bind(this));
-        }, 500);
 
         this.hand = new Hand(this.scene);
         this.hand.position.set(-0.2,-0.4, -0.6);
