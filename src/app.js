@@ -1,8 +1,8 @@
-import * as THREE from './three/three.module.js';
-
-import { GUI } from './three/addons/libs/lil-gui.module.min.js';
-import { VRButton } from './three/addons/webxr/VRButton.js';
-import { createText } from './three/addons/webxr/Text2D.js';
+import * as THREE from 'three';
+import Stats from 'three/addons/libs/stats.module.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { VRButton } from 'three/addons/webxr/VRButton.js';
+import { createText } from 'three/addons/webxr/Text2D.js';
 
 // import {
 //     BloomEffect
@@ -20,6 +20,8 @@ import { Trooper } from './trooper.js';
 import { Actor } from './actor.js';
 
 class App {
+
+    stats = new Stats();
 
     GRAVITY = 9.8 * 3.5;;
     BLOOM_SCENE = 1;
@@ -73,6 +75,7 @@ class App {
         this.container.appendChild(this.renderer.domElement);
         document.body.appendChild(VRButton.createButton(this.renderer));
 
+        this.container.appendChild( this.stats.dom );
     }
 
     async init() {
@@ -554,6 +557,7 @@ class App {
         }
 
         //this.composer.render(deltaTime);
+        this.stats.update();
 
         this.renderer.render(this.scene, this.camera);
     }

@@ -1,5 +1,5 @@
-import * as THREE from './three/three.module.js';
-import { Capsule } from './three/addons/math/Capsule.js';
+import * as THREE from 'three';
+import { Capsule } from 'three/addons/math/Capsule.js';
 
 export class Actor extends THREE.Object3D {
     static debug = false;

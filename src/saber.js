@@ -1,6 +1,6 @@
-import * as THREE from './three/three.module.js';
+import * as THREE from 'three';
 import { Actor } from './actor.js';
-import { GLTFLoader } from './three/addons/loaders/GLTFLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 export class Saber extends THREE.Object3D {
 

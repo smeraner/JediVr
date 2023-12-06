@@ -1,9 +1,9 @@
 /// <reference path="./world.js" />
-import * as THREE from './three/three.module.js';
-import * as SkeletonUtils from './three/addons/utils/SkeletonUtils.js';
+import * as THREE from 'three';
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { Actor } from './actor.js';
-import { GLTFLoader } from './three/addons/loaders/GLTFLoader.js';
-import { Capsule } from './three/addons/math/Capsule.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { Capsule } from 'three/addons/math/Capsule.js';
 
 /**
  * Trooper is a NPC enemy that will guard the world

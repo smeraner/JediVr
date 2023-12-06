@@ -1,7 +1,7 @@
-import * as THREE from './three/three.module.js';
+import * as THREE from 'three';
 import { Actor } from './actor.js';
-import { GLTFLoader } from './three/addons/loaders/GLTFLoader.js';
-import * as SkeletonUtils from './three/addons/utils/SkeletonUtils.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 
 export class Hand extends THREE.Object3D {
     static model = null;

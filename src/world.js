@@ -1,7 +1,7 @@
-import * as THREE from './three/three.module.js';
-import { GLTFLoader } from './three/addons/loaders/GLTFLoader.js';
-import { OctreeHelper } from './three/addons/helpers/OctreeHelper.js';
-import { Octree } from './three/addons/math/Octree.js';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OctreeHelper } from 'three/addons/helpers/OctreeHelper.js';
+import { Octree } from 'three/addons/math/Octree.js';
 
 export class World extends THREE.Object3D {
 
