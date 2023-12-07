@@ -79,6 +79,7 @@ module.exports = (env, argv) => ({
             //favicon: path.resolve(__dirname, 'public/favicon.png'),
             template: path.resolve(__dirname, 'src/index.html'), // template file
             filename: 'index.html', // output file
+            publicPath: './',
         }),
         new StylelintPlugin({ configFile: './.stylelintrc.json', context: 'src', files: '**/*.scss' }),
     ],
