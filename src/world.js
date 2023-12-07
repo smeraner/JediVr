@@ -1,3 +1,4 @@
+///<reference path="../node_modules/three/examples/jsm/math/Octree.js" />
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OctreeHelper } from 'three/addons/helpers/OctreeHelper.js';
@@ -125,7 +126,7 @@ export class World extends THREE.Object3D {
     }
 
     rebuildOctree() {
-        this.worldOctree.fromGraphNode(this.map);
+        this.worldOctree.clear().fromGraphNode(this.map);
     }
 
 }
