@@ -35,6 +35,7 @@ export class Saber extends THREE.Object3D {
     }
     static handleHeight = 0.2;
     static bladeHeight = 1.2;
+    static bladeScaleInitial = 0.01;
 
     animation = Saber.ANIMATIONS.NO;
 
@@ -59,8 +60,7 @@ export class Saber extends THREE.Object3D {
         });
 
         const blade = new THREE.Object3D();
-        blade.position.set(0, Saber.handleHeight * 0.5 + Saber.bladeHeight * 0.5, 0);
-        blade.visible = false;
+        blade.position.set(0, Saber.handleHeight * 0.5, 0);
 
         const bladeGeometry = new THREE.CylinderGeometry(0.013, 0.013, Saber.bladeHeight, 8, 1, false);
         const bladeMaterial = new THREE.MeshStandardMaterial({
@@ -93,10 +93,13 @@ export class Saber extends THREE.Object3D {
         const bladeGlowMesh2 = new THREE.Mesh(bladeGlowGeometry2, bladeGlowMaterial);
         blade.add(bladeGlowMesh2);
 
-        const light = new THREE.PointLight(saberColor, 2, 100, 3);
+        const light = new THREE.PointLight(saberColor, 0, 100, 3);
         this.light = light;
+
         blade.add(light);
         this.blade = blade;
+        //hack to make sure material geometry is loaded, visibility managed by GPU
+        this.blade.scale.setScalar(Saber.bladeScaleInitial);
 
         Saber.textureFlare0.then(textureFlare0 => {
             const lensPlaneGeometry = new THREE.PlaneGeometry(2, 2);
@@ -176,13 +179,14 @@ export class Saber extends THREE.Object3D {
     }
 
     on() {
-        this.blade.visible = true;
         if (this.soundInit) this.soundInit.play();
-        this.blade.scale.y = 0.0;
-        this.blade.position.y = Saber.handleHeight * 0.5;
-        
+
+        let scale = 0;
         const animateIgnition = () => {
-            this.blade.scale.y += 0.1;
+            scale += 0.1;
+            this.blade.scale.setScalar(scale);
+            this.light.intensity = 2 * scale;
+
             this.blade.position.y = Saber.handleHeight * 0.5 + Saber.bladeHeight * this.blade.scale.y * 0.5;
             if (this.blade.scale.y < 1) {
                 setTimeout(() => { animateIgnition() }, 10);
@@ -196,13 +200,15 @@ export class Saber extends THREE.Object3D {
     }
 
     off() {
-        this.blade.visible = false;
+        this.blade.scale.setScalar(Saber.bladeScaleInitial);
+        this.blade.position.set(0, Saber.handleHeight * 0.5, 0);
+        this.light.intensity = 0;
         if (this.soundHumming) this.soundHumming.stop();
         if (this.soundInit) this.soundInit.stop();
     }
 
     toggle() {
-        if (this.blade.visible) {
+        if (this.blade.scale.y > Saber.bladeScaleInitial) {
             this.off();
         } else {
             this.on();
@@ -220,11 +226,11 @@ export class Saber extends THREE.Object3D {
         if (this.animation !== Saber.ANIMATIONS.NO) return;
 
         this.animation = Saber.ANIMATIONS.SWING;
-        if (this.soundSwing && this.blade.visible === true) this.soundSwing.play();
+        if (this.soundSwing && this.blade.scale.y > Saber.bladeScaleInitial) this.soundSwing.play();
     }
 
     animate(deltaTime, world, enemys) {
-        if (this.blade.visible) {
+        if (this.blade.scale.y > Saber.bladeScaleInitial) {
             this.blade.rotation.y += deltaTime * 0.5;
         }
 
@@ -262,7 +268,7 @@ export class Saber extends THREE.Object3D {
     collide(world, enemys) {
         //this.bounds.setFromObject(this.blade, true);
 
-        if (this.blade.visible) {
+        if (this.blade.scale.y > Saber.bladeScaleInitial) {
 
             const colliders = enemys.map((enemy) => enemy.colliderMesh);
             colliders.push(world.map);
