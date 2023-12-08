@@ -196,7 +196,7 @@ class App {
             new THREE.Vector3(1.6, -1.6, -7),
         ];
 
-        const spawn = (spawnPosition, respawn=true)=>{
+        const spawn = (spawnPosition, respawn=false)=>{
             const trooper = new Trooper(this.GRAVITY, this.scene, this.audioListenerPromise);
             trooper.rotation.set(0, Math.PI, 0);
             trooper.setPosition(spawnPosition.x, spawnPosition.y, spawnPosition.z);
