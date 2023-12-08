@@ -244,8 +244,7 @@ class App {
             this.player.camera.add(this.saber);
 
             this.hand.position.set(-0.2,-0.4, -0.6);
-            this.hand.scale.set(-1,1,1);
-            this.hand.rotation.set(-Math.PI,0,2.2);
+            this.hand.rotation.set(-1.5,0,0);
             this.player.camera.add(this.hand);
         } else {
             this.saber.position.set(0,0,0);
@@ -253,8 +252,7 @@ class App {
             this.player.camera.remove(this.saber);
 
             this.hand.position.set(0,0,0);
-            this.hand.scale.set(-1,1,1);
-            this.hand.rotation.set(4.4,0,2.2);
+            this.hand.rotation.set(0,0,0);
             this.player.camera.remove(this.hand);
         }
     }
@@ -550,7 +548,7 @@ class App {
 
             this.player.animate(deltaTime, this.world);
             if(this.saber) this.saber.animate(deltaTime, this.world, this.enemys);
-            if(this.hand) this.hand.animate(deltaTime);
+            if(this.hand) this.hand.animate(deltaTime, this.world, this.enemys);
 
             this.enemys.forEach(enemy => {
                 enemy.animate(deltaTime, this.world);
