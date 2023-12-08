@@ -6,6 +6,7 @@ export class LaserBeam extends THREE.Object3D {
     thickness = 0.01;
     length = 1;
     maxDistance = 35;
+    distance = 0;
     speed = 10;
 
 /**
@@ -44,9 +45,12 @@ export class LaserBeam extends THREE.Object3D {
     }
 
     animate(deltaTime) {
-        this.position.z += this.speed * deltaTime;
+        this.distance += this.speed * deltaTime;
 
-        if(this.position.z > this.maxDistance) {
+        //move in direction
+        this.position.addScaledVector(this.getWorldDirection(new THREE.Vector3()), this.speed * deltaTime);
+
+        if(this.distance > this.maxDistance) {
             this.dispatchEvent({ type: 'expired' });
             this.scene.remove(this);
         }
