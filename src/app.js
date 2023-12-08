@@ -163,7 +163,7 @@ class App {
 
         //init player
         this.player = new Player(this.scene, this.audioListenerPromise, this.GRAVITY);
-        this.player.position.copy(this.world.playerSpawnPoint);
+        this.player.teleport(this.world.playerSpawnPoint);
         this.camera = this.player.getCamera();
 
         //init saber
@@ -522,17 +522,9 @@ class App {
     }
 
     teleportPlayerIfOob() {
-
         if (this.player.position.y <= - 25) {
-
-            this.player.collider.start.set(0, 0.35, 0);
-            this.player.collider.end.set(0, 1, 0);
-            this.player.collider.radius = 0.35;
-            this.player.position.copy(this.player.collider.end);
-            this.player.rotation.set(0, 0, 0);
-
+            this.player.teleport(this.world.playerSpawnPoint);
         }
-
     }
 
 

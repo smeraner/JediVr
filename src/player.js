@@ -7,8 +7,9 @@ export class Player extends THREE.Object3D {
     gravity = 0;
     onFloor = false;
      
-    collider = new Capsule(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0.3, 0), 0.8);
-
+    colliderHeight = .3;
+    collider = new Capsule(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, this.colliderHeight, 0), 0.8);
+    
     velocity = new THREE.Vector3();
     direction = new THREE.Vector3();
 
@@ -92,6 +93,18 @@ export class Player extends THREE.Object3D {
         this.position.y -= this.collider.radius;
 
         this.colliderMesh.visible = Player.debug;
+    }
+
+    teleport(position) {
+        this.position.copy(position);
+        this.collider.start.copy(position);
+        this.collider.end.copy(position);
+        this.collider.end.y += this.colliderHeight;
+        this.colliderMesh.position.copy(this.collider.start);
+
+        this.velocity.set(0, 0, 0);
+        this.onFloor = true;
+
     }
 
     getForwardVector() {
