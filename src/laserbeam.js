@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 
-export class LaseBeam extends THREE.Object3D {
+export class LaserBeam extends THREE.Object3D {
 
     color = 0x00ff00;
     thickness = 0.01;
     length = 1;
-    maxDistance = 100;
-    speed = 1;
+    maxDistance = 35;
+    speed = 10;
 
 /**
  * 
@@ -29,20 +29,25 @@ export class LaseBeam extends THREE.Object3D {
 
     /**
      * 
+     * @param {THREE.Scene} scene
      * @param {THREE.Vector3} origin 
-     * @param {THREE.Vector3} direction 
+     * @param {THREE.Vector3} direction
+     * @returns {LaserBeam}
      */
-    shoot(origin, direction) {
-        this.position.copy(origin);
-        this.lookAt(direction);
+    static shoot(scene, origin, direction) {
+        const laser = new LaserBeam(scene);
+        laser.position.copy(origin);
+        laser.lookAt(direction);
 
-        this.scene.add(this);
+        scene.add(laser);
+        return laser;
     }
 
     animate(deltaTime) {
         this.position.z += this.speed * deltaTime;
 
         if(this.position.z > this.maxDistance) {
+            this.dispatchEvent({ type: 'expired' });
             this.scene.remove(this);
         }
     }

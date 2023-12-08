@@ -549,7 +549,7 @@ class App {
             if(this.hand) this.hand.animate(deltaTime, this.world, this.enemys);
 
             this.enemys.forEach(enemy => {
-                enemy.animate(deltaTime, this.world);
+                enemy.animate(deltaTime, this.world, this.player);
             });
 
             this.world.animate(deltaTime);

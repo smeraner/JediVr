@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { Actor } from './actor.js';
+import { LaserBeam } from './laserbeam.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { Capsule } from 'three/addons/math/Capsule.js';
 
@@ -34,6 +35,8 @@ export class Trooper extends Actor {
     damageMultiplyer = 0.25;
     colliderHeight = 1.2;
     mixer = null;
+
+    laserBeams = [];
 
     /**
      * 
@@ -105,8 +108,31 @@ export class Trooper extends Actor {
     }
 
 
-    animate(deltaTime, world) {
+    /**
+     * 
+     * @param {number} deltaTime
+     * @param {World} world
+     * @param {THREE.Object3D} player 
+     */
+    animate(deltaTime, world, player) {
         super.animate(deltaTime, world);
+
+        //random shoot laser beam in direction of player
+        if(this.health > 0 && this.laserBeams.length < 5 && Math.random() < 0.001) {
+            const direction = player.position.clone().sub(this.position).normalize();
+            const centerPosition = this.position.clone();
+            centerPosition.y += this.colliderHeight;
+            const laser = LaserBeam.shoot(this.scene, centerPosition, direction);
+            this.laserBeams.push(laser);
+            laser.addEventListener('expired', () => {
+                this.laserBeams.splice(this.laserBeams.indexOf(laser), 1);
+            });
+        }
+
+        //update laser beams
+        this.laserBeams.forEach(laser => {
+            laser.animate(deltaTime);
+        });
 
         if(this.mixer) this.mixer.update(deltaTime);
     }
@@ -120,6 +146,9 @@ export class Trooper extends Actor {
                 child.material.dispose();
             }
             if ( child.isSkinnedMesh ) child.skeleton.dispose();
+        });
+        this.laserBeams.forEach(laser => {
+            laser.dispatchEvent({ type: 'expired' });
         });
     }
 

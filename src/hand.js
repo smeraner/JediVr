@@ -35,7 +35,7 @@ export class Hand extends THREE.Object3D {
     forceRange = 15;
 
     animation = Hand.ANIMATIONS.OPENED;
-    animationProgress = 0;
+    animationProgress = 1;
     animationSpeed = 1.2;
 
     /**
@@ -96,6 +96,7 @@ export class Hand extends THREE.Object3D {
             this.animationProgress += deltaTime * this.animationSpeed;
 
             if(this.animationProgress >= 1) {
+                this.animationProgress = 1;
                 this.animation = Hand.ANIMATIONS.CLOSED;
                 this.dispatchEvent({type: 'closed'});
             }
@@ -110,6 +111,7 @@ export class Hand extends THREE.Object3D {
             this.animationProgress += deltaTime * this.animationSpeed;
 
             if(this.animationProgress >= 1) {
+                this.animationProgress = 1;
                 this.animation = Hand.ANIMATIONS.OPENED;
                 this.dispatchEvent({type: 'opened'});
             }
@@ -119,19 +121,17 @@ export class Hand extends THREE.Object3D {
 
     closeHand() {
         if(!this.skeleton) return;
-        if(this.animation !== Hand.ANIMATIONS.OPENED) return;
 
         this.animation = Hand.ANIMATIONS.CLOSE;
-        this.animationProgress = 0;
+        this.animationProgress = 1 - this.animationProgress;
         this.animationSpeed = 3;
     }
 
     openHand() {
         if(!this.skeleton) return;
-        if(this.animation !== Hand.ANIMATIONS.CLOSED) return;
 
         this.animation = Hand.ANIMATIONS.OPEN;
-        this.animationProgress = 0;
+        this.animationProgress = 1 - this.animationProgress;
         this.animationSpeed = 3;
     }
 
