@@ -32,7 +32,8 @@ export class Hand extends THREE.Object3D {
         OPENED: 4
     }
 
-    forceRange = 5;
+    force = false;
+    forceRange = 15;
 
     animation = Hand.ANIMATIONS.OPENED;
     animationProgress = 0;
@@ -58,14 +59,17 @@ export class Hand extends THREE.Object3D {
             });
 
             this.add(model);
-            this.closeHand();
+
+            //little animation
+            //this.addEventListener('closed', () => { this.openHand(); this.removeEventListener('closed') });
+            //this.closeHand();
         });
 
         const raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(), 0, this.forceRange);
         this.raycaster = raycaster;
 
         const handDirection = new THREE.Object3D();
-        handDirection.position.set(0,1,0);
+        handDirection.position.set(0,this.forceRange,0);
         this.add(handDirection);
         this.handDirection = handDirection;
 
@@ -94,7 +98,7 @@ export class Hand extends THREE.Object3D {
 
             if(this.animationProgress >= 1) {
                 this.animation = Hand.ANIMATIONS.CLOSED;
-                this.openHand();
+                this.dispatchEvent({type: 'closed'});
             }
         } else if(this.animation === Hand.ANIMATIONS.OPEN) {
             handRoot.children.forEach(finger => {
@@ -108,6 +112,7 @@ export class Hand extends THREE.Object3D {
 
             if(this.animationProgress >= 1) {
                 this.animation = Hand.ANIMATIONS.OPENED;
+                this.dispatchEvent({type: 'opened'});
             }
         }
         this.collide(world, enemys);
@@ -119,7 +124,7 @@ export class Hand extends THREE.Object3D {
 
         this.animation = Hand.ANIMATIONS.CLOSE;
         this.animationProgress = 0;
-        this.animationSpeed = 1.7;
+        this.animationSpeed = 3;
     }
 
     openHand() {
@@ -128,11 +133,11 @@ export class Hand extends THREE.Object3D {
 
         this.animation = Hand.ANIMATIONS.OPEN;
         this.animationProgress = 0;
-        this.animationSpeed = 2;
+        this.animationSpeed = 3;
     }
 
     collide(world, enemys) {
-        if(this.animation !== Hand.ANIMATIONS.CLOSE) return;
+        if(!this.force) return;
 
         const handPosition = new THREE.Vector3();
         this.getWorldPosition(handPosition);
@@ -145,14 +150,28 @@ export class Hand extends THREE.Object3D {
         const collisions = this.raycaster.intersectObjects(colliders);
         if(collisions.length > 0) {
             const collision = collisions[0];
-            if(collision) {
-                console.log('force',collision);
+            const obj = collision.object.userData.obj;
+            if(obj) {
+                //console.debug('force',obj);
+                this.forcePullObj(obj, this.raycaster.ray.direction, collision.distance);
             }
         }
     }
 
     forcePull() {
+        this.force = true;
         this.closeHand();
+    }
+
+    forceRelease() {
+        this.force = false;
+        this.openHand();
+    }
+
+    forcePullObj(obj,direction,distance) {
+        if(distance > 1) {
+            obj.velocity.addScaledVector(direction, -0.001 * distance);
+        }
     }
     
 }

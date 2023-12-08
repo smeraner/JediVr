@@ -144,10 +144,12 @@ class App {
         window.addEventListener('blur', () => listener.context.suspend());
         window.addEventListener('focus', () => listener.context.resume());
 
+        document.addEventListener('mouseup', this.mouseUpHandler.bind(this));
+        document.addEventListener('mousedown', this.mouseDownHandler.bind(this));
+
         if(this.saber) {
             setTimeout(() => {
                 this.saber.on();
-                document.addEventListener('mouseup', this.mouseUpHandler.bind(this));
             }, 500);
         }
     }
@@ -227,8 +229,12 @@ class App {
         return this.audioListenerPromise;
     }
 
-    mouseUpHandler(e) {
+    mouseDownHandler(e) {
         if (e.button === 2) this.hand.forcePull();
+    }
+
+    mouseUpHandler(e) {
+        if (e.button === 2) this.hand.forceRelease();
         if (e.button === 0) this.saber.swing();
     }
 
