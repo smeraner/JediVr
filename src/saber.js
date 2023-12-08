@@ -207,8 +207,12 @@ export class Saber extends THREE.Object3D {
         if (this.soundInit) this.soundInit.stop();
     }
 
+    isOn() {
+        return this.blade.scale.y > Saber.bladeScaleInitial;
+    }
+
     toggle() {
-        if (this.blade.scale.y > Saber.bladeScaleInitial) {
+        if (this.isOn()) {
             this.off();
         } else {
             this.on();
@@ -226,11 +230,11 @@ export class Saber extends THREE.Object3D {
         if (this.animation !== Saber.ANIMATIONS.NO) return;
 
         this.animation = Saber.ANIMATIONS.SWING;
-        if (this.soundSwing && this.blade.scale.y > Saber.bladeScaleInitial) this.soundSwing.play();
+        if (this.soundSwing && this.isOn()) this.soundSwing.play();
     }
 
     animate(deltaTime, world, enemys) {
-        if (this.blade.scale.y > Saber.bladeScaleInitial) {
+        if (this.isOn()) {
             this.blade.rotation.y += deltaTime * 0.5;
         }
 
@@ -268,7 +272,7 @@ export class Saber extends THREE.Object3D {
     collide(world, enemys) {
         //this.bounds.setFromObject(this.blade, true);
 
-        if (this.blade.scale.y > Saber.bladeScaleInitial) {
+        if (this.isOn()) {
 
             const colliders = enemys.map((enemy) => enemy.colliderMesh);
             colliders.push(world.map);
@@ -343,10 +347,11 @@ export class Saber extends THREE.Object3D {
             // let localPoint = this.blade.worldToLocal(point);
             // //substract vector from local point
             // localPoint = localPoint.sub(this.bladePeak.position).normalize().multiplyScalar(0.1);
-            this.light.position.y = distance - Saber.bladeHeight * 0.5 - 0.2;
+            this.light.position.y = distance - Saber.bladeHeight * 0.5 - 0.5;
 
         } else {
             this.lensPlane.visible = false;
+            this.light.position.y = 0;
         }
     }
 
