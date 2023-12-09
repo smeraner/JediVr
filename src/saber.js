@@ -290,35 +290,10 @@ export class Saber extends THREE.Object3D {
                     intersection: inters
                 }
             })
-                // const collisions = enemys.map((obj) => {
-                //     const box3Obj = new THREE.Box3().setFromObject(obj)
-                //     let intersection = null;
-                //     const intersectBox = this.bounds.intersectsBox(box3Obj);
-                //     if(intersectBox){
-                //         console.log("intersectBox");
-                //         // intersection = {
-                //         //     point: this.blade.getWorldPosition(new THREE.Vector3()),
-                //         // }
-                //         // //intersection = this.bounds.intersect(box3Obj);
-                //         const rayOrigin = this.handle.getWorldPosition(new THREE.Vector3());
-                //         const rayDirection = this.bladePeak.getWorldPosition(new THREE.Vector3()).sub(rayOrigin).normalize();
-                //         this.raycaster.set(rayOrigin, rayDirection);
-                //         const rayIntersections = this.raycaster.intersectObject(obj,true);
-                //         if(rayIntersections.length){
-                //             //console.log(rayIntersections)
-                //             intersection = rayIntersections[0];
-                //         }
-                //     }
-
-                //     return {
-                //         obj: obj,
-                //         intersection: intersection,
-                //     }
-                // })
-                .filter((col) => col.intersection);
+            .filter((col) => col.intersection);
 
             if (collisions.length > 0) {
-                //console.log(collisions)
+                this.dispatchEvent({ type: 'collide', collisions: collisions });
                 //this.setSaberColor(0x00ff00);
                 collisions.forEach(col => {
                     const point = col.intersection.point;
@@ -332,7 +307,6 @@ export class Saber extends THREE.Object3D {
                 //this.setSaberColor(0xff0000);
                 this.collisionEffect();
             }
-            //const box = new THREE.Box3Helper(box3, 0xffff00);
 
         }
     }

@@ -144,11 +144,11 @@ class App {
         window.addEventListener('blur', () => listener.context.suspend());
         window.addEventListener('focus', () => listener.context.resume());
 
-        document.addEventListener('mouseup', this.mouseUpHandler.bind(this));
-        document.addEventListener('mousedown', this.mouseDownHandler.bind(this));
-
         if(this.saber) {
             setTimeout(() => {
+                document.addEventListener('mouseup', this.mouseUpHandler.bind(this));
+                document.addEventListener('mousedown', this.mouseDownHandler.bind(this));
+
                 this.saber.on();
             }, 500);
         }
@@ -265,6 +265,8 @@ class App {
  
     setupXR() {
         this.renderer.xr.enabled = true;
+        //increases the resolution on Quest
+        this.renderer.xr.setFramebufferScaleFactor(2.0);
 
         this.controller1 = this.renderer.xr.getController(0);
         this.controller1.addEventListener('connected', (e) => {

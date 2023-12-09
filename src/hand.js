@@ -121,6 +121,7 @@ export class Hand extends THREE.Object3D {
 
     closeHand() {
         if(!this.skeleton) return;
+        if(this.animation === Hand.ANIMATIONS.CLOSED) return;
 
         this.animation = Hand.ANIMATIONS.CLOSE;
         this.animationProgress = 1 - this.animationProgress;
@@ -129,6 +130,7 @@ export class Hand extends THREE.Object3D {
 
     openHand() {
         if(!this.skeleton) return;
+        if(this.animation === Hand.ANIMATIONS.OPENED) return;
 
         this.animation = Hand.ANIMATIONS.OPEN;
         this.animationProgress = 1 - this.animationProgress;
