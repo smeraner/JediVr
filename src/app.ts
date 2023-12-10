@@ -49,7 +49,8 @@ export class App {
         document.body.appendChild(this.container);
 
         this.renderer = new THREE.WebGLRenderer({
-            antialias: true,
+            antialias: window.devicePixelRatio <= 1,
+            powerPreference: "high-performance"
         });
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.setSize(window.innerWidth, window.innerHeight);
