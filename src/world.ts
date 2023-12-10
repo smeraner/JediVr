@@ -61,15 +61,13 @@ export class World extends THREE.Object3D {
             const mesh = child as THREE.Mesh;
 
             if (mesh.isMesh && child.name === "Hemisphere") {
-                [(mesh.material as THREE.MeshStandardMaterial).map, 
-                    (mesh.material as THREE.MeshStandardMaterial).lightMap].forEach(map => {
-                    if (map) {
-                        map.wrapS = THREE.RepeatWrapping;
-                        map.wrapT = THREE.RepeatWrapping;
-                        map.repeat.set(2, 2);
-                        map.anisotropy = 4;
-                    }
-                });
+                const map = (mesh.material as THREE.MeshBasicMaterial).map;
+                if (map) {
+                    map.wrapS = THREE.RepeatWrapping;
+                    map.wrapT = THREE.RepeatWrapping;
+                    map.repeat.set(2, 2);
+                    map.anisotropy = 4;
+                }
             } else if (child.name === "Enemy") {
                 this.enemySpawnPoints.push(child.position);
             } else if (child.name === "Player") {

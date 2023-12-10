@@ -181,11 +181,8 @@ export class Hand extends THREE.Object3D<HandEventMap> {
     collide(world: World | undefined, enemys: Actor[]): void {
         if(!this.force) return;
 
-        const handPosition = new THREE.Vector3();
-        this.getWorldPosition(handPosition);
-        const handDirection = new THREE.Vector3();
-        this.handDirection.getWorldPosition(handDirection);
-        this.raycaster.set(handPosition, handDirection);
+        this.getWorldPosition(this.raycaster.ray.origin);
+        this.handDirection.getWorldPosition(this.raycaster.ray.direction);  
 
         const colliders = enemys.map((enemy: { colliderMesh: any; }) => enemy.colliderMesh);
 

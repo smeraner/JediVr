@@ -281,9 +281,8 @@ export class Saber extends THREE.Object3D<SaberEventMap> {
             const colliders: Array<THREE.Object3D> = enemys.map((enemy) => enemy.colliderMesh);
             if(world.map) colliders.push(world.map);
 
-            const rayOrigin = this.handle.getWorldPosition(new THREE.Vector3());
-            const rayDirection = this.bladePeak.getWorldPosition(new THREE.Vector3()).sub(rayOrigin).normalize();
-            this.raycaster.set(rayOrigin, rayDirection);
+            this.handle.getWorldPosition(this.raycaster.ray.origin);
+            this.bladePeak.getWorldPosition(this.raycaster.ray.direction).sub(this.raycaster.ray.origin).normalize();
             const rayIntersections = this.raycaster.intersectObjects(colliders, true);
 
             const collisions = rayIntersections.map((inters) => {
@@ -294,7 +293,7 @@ export class Saber extends THREE.Object3D<SaberEventMap> {
                     intersection: inters
                 }
             })
-                .filter((col) => col.intersection);
+            .filter((col) => col.intersection);
 
             if (collisions.length > 0) {
                 this.dispatchEvent({ type: "collision", collisions: collisions } as SaberCollisionEvent);

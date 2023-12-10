@@ -7,10 +7,10 @@ export class Player extends THREE.Object3D {
 
     gravity = 0;
     onFloor = false;
-     
+
     colliderHeight = .3;
     collider = new Capsule(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, this.colliderHeight, 0), 0.8);
-    
+
     velocity = new THREE.Vector3();
     direction = new THREE.Vector3();
     scene: THREE.Scene;
@@ -29,7 +29,27 @@ export class Player extends THREE.Object3D {
         this.gravity = gravity;
 
         this.rotation.order = 'YXZ';
-        this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+        let fov = 70;
+        let far = 1000; // > 1080px screen width res camera
+        let near = 0.1;
+
+        // Mobile camera
+        if (window.innerWidth <= 768) {
+            far = 500
+            // 769px - 1080px screen width camera
+        } else if (window.innerWidth >= 769 && window.innerWidth <= 1080) {
+            far = 750
+        } 
+
+        this.camera = new THREE.PerspectiveCamera(
+            fov,
+            window.innerWidth / window.innerHeight,
+            near,
+            far
+        )
+
+        //this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.camera.rotation.order = 'YXZ';
         this.camera.position.y = 1.5;
         this.add(this.camera);
