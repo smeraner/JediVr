@@ -1,25 +1,32 @@
-///<reference path="../node_modules/three/examples/jsm/math/Octree.js" />
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { OctreeHelper } from 'three/addons/helpers/OctreeHelper.js';
 import { Octree } from 'three/addons/math/Octree.js';
 
 export class World extends THREE.Object3D {
 
     static debug = false;
-    static #staticConstructorDummyResult = (function () {
+    static initialize() {
         //load audio     
         const audioLoader = new THREE.AudioLoader();
         World.soundBuffer = audioLoader.loadAsync('./sounds/background_breath.ogg');
-    })()
+    }
 
     worldOctree = new Octree();
+    static soundBuffer: Promise<AudioBuffer>;
+    gui: GUI;
+    enemySpawnPoints: THREE.Vector3[];
+    playerSpawnPoint: THREE.Vector3;
+    objectLoader: THREE.ObjectLoader;
+    sound: THREE.Audio | undefined;
+    map: THREE.Object3D<THREE.Object3DEventMap> | undefined;
+    helper: OctreeHelper | undefined;
 
     /**
      * @param {Promise<THREE.AudioListener>} audioListenerPromise
      * @param {GUI} gui
      */
-    constructor(audioListenerPromise, gui) {
+    constructor(audioListenerPromise: Promise<THREE.AudioListener>, gui: GUI) {
         super();
 
         this.gui = gui;
@@ -29,36 +36,9 @@ export class World extends THREE.Object3D {
         this.objectLoader = new THREE.ObjectLoader();
 
         this.initAudio(audioListenerPromise);
-
-        // const fillLight1 = new THREE.HemisphereLight(0x8dc1de, 0x00668d, 1.5);
-        // fillLight1.position.set(2, 1, 1);
-        // this.scene.add(fillLight1);
-
-        // const directionalLight = new THREE.DirectionalLight(0xffffff, 2.5);
-        // directionalLight.position.set(- 5, 25, - 1);
-        // directionalLight.castShadow = true;
-        // directionalLight.shadow.camera.near = 0.01;
-        // directionalLight.shadow.camera.far = 500;
-        // directionalLight.shadow.camera.right = 30;
-        // directionalLight.shadow.camera.left = - 30;
-        // directionalLight.shadow.camera.top = 30;
-        // directionalLight.shadow.camera.bottom = - 30;
-        // directionalLight.shadow.mapSize.width = 1024;
-        // directionalLight.shadow.mapSize.height = 1024;
-        // directionalLight.shadow.radius = 4;
-        // directionalLight.shadow.bias = - 0.00006;
-        // this.scene.add(directionalLight);
-
-        // this.scene.background = new THREE.Color(0x88ccee);
-        // this.scene.fog = new THREE.Fog(0x88ccee, 0, 50);
-
-        // this.textureLoader = new THREE.TextureLoader();
-        // this.gltfLoader = new GLTFLoader();
-        // this.gltfLoader.setPath('./models/gltf/');
-
     }
 
-    async initAudio(audioListenerPromise) {
+    async initAudio(audioListenerPromise: Promise<THREE.AudioListener>) {
         const audioListener = await audioListenerPromise;
         const soundBuffer = await World.soundBuffer;
         this.sound = new THREE.Audio(audioListener);
@@ -68,7 +48,7 @@ export class World extends THREE.Object3D {
         this.sound.play();
     }
 
-    async loadScene(url = './models/scene_ship.json') {
+    async loadScene(url = './models/scene_ship.json'): Promise<THREE.Scene> {
 
         const scene = await this.objectLoader.loadAsync(url);
 
@@ -78,9 +58,11 @@ export class World extends THREE.Object3D {
 
         //find object with name "Hemisphere" and change material to repeat
         scene.traverse(child => {
-            if (child.isMesh && child.name === "Hemisphere") {
+            const mesh = child as THREE.Mesh;
 
-                [child.material.map,child.material.lightMap].forEach(map => {
+            if (mesh.isMesh && child.name === "Hemisphere") {
+                [(mesh.material as THREE.MeshStandardMaterial).map, 
+                    (mesh.material as THREE.MeshStandardMaterial).lightMap].forEach(map => {
                     if (map) {
                         map.wrapS = THREE.RepeatWrapping;
                         map.wrapT = THREE.RepeatWrapping;
@@ -95,11 +77,14 @@ export class World extends THREE.Object3D {
             }
 
             //damageable objects
-            if(child.isMesh && child.userData && child.userData.health) {
-                child.damage = (damage) => {
+            if(mesh.isMesh && child.userData && child.userData.health) {
+                const damageableChild = child as DamageableObject;
+                damageableChild.damage = (damage: number) => {
                     child.userData.health -= damage;
                     if(child.userData.health <= 0) {
-                        child.parent.remove(child);
+                        if (child.parent !== null) {
+                            child.parent.remove(child);
+                        }
                         this.rebuildOctree();
                     }
                 }
@@ -118,15 +103,17 @@ export class World extends THREE.Object3D {
         scene.add(helper);
         this.helper = helper;
 
-        return scene;
+        return scene as THREE.Scene;
     }
 
-    animate(deltaTime) {
+    animate(deltaTime: number) {
 
     }
 
     rebuildOctree() {
-        this.worldOctree.clear().fromGraphNode(this.map);
+        if (this.map) {
+            this.worldOctree.clear().fromGraphNode(this.map);
+        }
     }
-
 }
+World.initialize();

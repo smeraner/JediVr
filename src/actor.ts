@@ -1,7 +1,17 @@
 import * as THREE from 'three';
 import { Capsule } from 'three/addons/math/Capsule.js';
+import { World } from './world';
+import { Player } from './player';
 
-export class Actor extends THREE.Object3D {
+interface ActorEventMap extends THREE.Object3DEventMap  {
+    dead: ActorDeadEvent;
+}
+
+interface ActorDeadEvent extends THREE.Event {
+    type: 'dead';
+}
+
+export class Actor extends THREE.Object3D<ActorEventMap> {
     static debug = false;
     
     gravity = 0;
@@ -9,20 +19,21 @@ export class Actor extends THREE.Object3D {
     damageMultiplyer = 0.1;
     onFloor = false;
 
-    colliderMesh = null;
+    colliderMesh: THREE.Mesh;
     colliderHeight = 0.3;
     colliderRadius = 0.5;
     collider = new Capsule(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, this.colliderHeight, 0), this.colliderRadius);
 
     velocity = new THREE.Vector3();
     direction = new THREE.Vector3();
+    scene: THREE.Scene;
 
     /**
      * 
      * @param {number} gravity 
      * @param {THREE.Scene} scene 
      */
-    constructor(gravity, scene) {
+    constructor(gravity: number, scene: THREE.Scene) {
         super();
 
         this.gravity = gravity;
@@ -46,7 +57,7 @@ export class Actor extends THREE.Object3D {
      * Handles the actor's movement.
      * @param {World} world 
      */
-    worldCollitions(world) {
+    worldCollitions(world: World) {
         const result = world.worldOctree.capsuleIntersect(this.collider);
 
         this.onFloor = false;
@@ -65,8 +76,9 @@ export class Actor extends THREE.Object3D {
     /**
      * @param {number} deltaTime
      * @param {World} world
+     * @param {THREE.Player} player
      */
-    animate(deltaTime, world) {
+    animate(deltaTime: number, world: World, player: Player) {
         let damping = Math.exp(- 4 * deltaTime) - 1;
         if (!this.onFloor) {
             this.velocity.y -= this.gravity * deltaTime;
@@ -91,23 +103,22 @@ export class Actor extends THREE.Object3D {
      * @param {number} y
      * @param {number} z
      */
-    setPosition(x, y, z) {
+    setPosition(x: number, y: number, z: number) {
         this.position.set(x, y, z);
         this.collider.start.set(x, y, z);
         this.collider.end.set(x, y + this.colliderHeight, z);
-        //this.colliderHelper.position.copy(this.collider.start);
     }
 
     /**
      * Process inbound damage to the actor.
      * @param {number} amount
      */
-    damage(amount) {
+    damage(amount: number) {
         if(this.health === 0) return;
         
         this.health -= amount * this.damageMultiplyer;
         if (this.health <= 0) {
-            this.dispatchEvent({ type: 'dead' });
+            this.dispatchEvent({type: "dead"} as ActorDeadEvent);
             this.health = 0;
         }
     }

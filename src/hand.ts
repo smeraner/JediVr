@@ -1,10 +1,31 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
+import { Actor } from './actor';
+import { World } from './world';
 
-export class Hand extends THREE.Object3D {
-    static model = null;
-    static #staticConstructorDummyResult = (function () {
+interface HandEventMap extends THREE.Object3DEventMap  {
+    opened: HandOpenedEvent;
+    closed: HandClosedEvent;
+}
+
+interface HandOpenedEvent extends THREE.Event {
+    type: 'opened';
+}
+interface HandClosedEvent extends THREE.Event {
+    type: 'closed';
+}
+
+export class Hand extends THREE.Object3D<HandEventMap> {
+    static model: Promise<any>;
+    scene: THREE.Scene;
+    raycaster: THREE.Raycaster;
+    bones: {};
+    skeleton: THREE.Skeleton | null;
+    handDirection: THREE.Object3D<THREE.Object3DEventMap>;
+    line: THREE.Line<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.LineDashedMaterial>;
+
+    static initialize () {
         //load model     
         const gltfLoader = new GLTFLoader();
         Hand.model = gltfLoader.loadAsync('./models/hand.glb').then(gltf => {
@@ -12,8 +33,9 @@ export class Hand extends THREE.Object3D {
             gltf.scene.scale.set(-0.01, 0.01, 0.01);
             gltf.scene.rotation.set(4.8,0,2)
             gltf.scene.traverse(child => {
-                if (child.isMesh && child.material) {
-                    child.material = new THREE.MeshStandardMaterial({
+                const mesh = child as THREE.Mesh;
+                if (mesh.isMesh && mesh.material) {
+                    mesh.material = new THREE.MeshStandardMaterial({
                         color: 0x000000,
                         roughness: 0,
                         metalness: 1
@@ -22,7 +44,7 @@ export class Hand extends THREE.Object3D {
             });
             return gltf;
         });
-    })()
+    }
 
     static ANIMATIONS = {
         CLOSE: 1,
@@ -42,7 +64,7 @@ export class Hand extends THREE.Object3D {
      * 
      * @param {THREE.Scene} scene 
      */
-    constructor(scene) {
+    constructor(scene: THREE.Scene) {
         super();
 
         this.scene = scene;
@@ -52,8 +74,9 @@ export class Hand extends THREE.Object3D {
         Hand.model.then(gltf => {
             const model = SkeletonUtils.clone( gltf.scene );
             model.traverse(child => {
-                if(child.isBone && child.name === '_rootJoint') {
-                    this.skeleton = new THREE.Skeleton([child]);
+                const bone = child as THREE.Bone;
+                if(bone.isBone && child.name === '_rootJoint') {
+                    this.skeleton = new THREE.Skeleton([bone]);
                 }
             });
 
@@ -80,7 +103,7 @@ export class Hand extends THREE.Object3D {
         this.line = line;
     }
 
-    animate(deltaTime, world, enemys) {
+    animate(deltaTime: number, world: World | undefined, enemys: Actor[]) {
         if(!this.skeleton) return;
 
         const handRoot = this.skeleton.bones[0].children[0];
@@ -98,7 +121,7 @@ export class Hand extends THREE.Object3D {
             if(this.animationProgress >= 1) {
                 this.animationProgress = 1;
                 this.animation = Hand.ANIMATIONS.CLOSED;
-                this.dispatchEvent({type: 'closed'});
+                this.dispatchEvent({type: "closed"} as HandClosedEvent);
             }
         } else if(this.animation === Hand.ANIMATIONS.OPEN) {
             handRoot.children.forEach(finger => {
@@ -113,7 +136,7 @@ export class Hand extends THREE.Object3D {
             if(this.animationProgress >= 1) {
                 this.animationProgress = 1;
                 this.animation = Hand.ANIMATIONS.OPENED;
-                this.dispatchEvent({type: 'opened'});
+                this.dispatchEvent({type: "opened"} as HandOpenedEvent);
             }
         }
         this.collide(world, enemys);
@@ -137,7 +160,7 @@ export class Hand extends THREE.Object3D {
         this.animationSpeed = 3;
     }
 
-    collide(world, enemys) {
+    collide(world: World | undefined, enemys: Actor[]): void {
         if(!this.force) return;
 
         const handPosition = new THREE.Vector3();
@@ -146,7 +169,7 @@ export class Hand extends THREE.Object3D {
         this.handDirection.getWorldPosition(handDirection);
         this.raycaster.set(handPosition, handDirection);
 
-        const colliders = enemys.map((enemy) => enemy.colliderMesh);
+        const colliders = enemys.map((enemy: { colliderMesh: any; }) => enemy.colliderMesh);
 
         const collisions = this.raycaster.intersectObjects(colliders);
         if(collisions.length > 0) {
@@ -169,10 +192,11 @@ export class Hand extends THREE.Object3D {
         this.openHand();
     }
 
-    forcePullObj(obj,direction,distance) {
+    forcePullObj(obj: { velocity: { addScaledVector: (arg0: any, arg1: number) => void; }; },direction: THREE.Vector3,distance: number) {
         if(distance > 1) {
             obj.velocity.addScaledVector(direction, -0.001 * distance);
         }
     }
     
 }
+Hand.initialize();

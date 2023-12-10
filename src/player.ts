@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { World } from './world';
 import { Capsule } from 'three/addons/math/Capsule.js';
 
 export class Player extends THREE.Object3D {
@@ -12,13 +13,16 @@ export class Player extends THREE.Object3D {
     
     velocity = new THREE.Vector3();
     direction = new THREE.Vector3();
+    scene: THREE.Scene;
+    camera: THREE.PerspectiveCamera;
+    colliderMesh: THREE.Mesh<THREE.CapsuleGeometry, THREE.MeshBasicMaterial, THREE.Object3DEventMap>;
 
     /**
      * @param {THREE.Scene} scene
      * @param {Promise<THREE.AudioListener>} audioListenerPromise
      * @param {number} gravity
      */
-    constructor(scene, audioListenerPromise, gravity) {
+    constructor(scene: THREE.Scene, audioListenerPromise: Promise<THREE.AudioListener>, gravity: number) {
         super();
 
         this.scene = scene;
@@ -43,11 +47,11 @@ export class Player extends THREE.Object3D {
         this.colliderMesh.visible = Player.debug;
     }
 
-    getCamera() {
+    getCamera(): THREE.PerspectiveCamera {
         return this.camera;
     }
 
-    async initAudio(audioListenerPromise) {
+    async initAudio(audioListenerPromise: Promise<THREE.AudioListener>): Promise<void> {
         const audioListener = await audioListenerPromise;
         this.camera.add(audioListener);
     }
@@ -56,7 +60,7 @@ export class Player extends THREE.Object3D {
      * 
      * @param {World} world 
      */
-    collitions(world) {
+    collitions(world: World): void {
         const result = world.worldOctree.capsuleIntersect(this.collider);
 
         this.onFloor = false;
@@ -75,7 +79,7 @@ export class Player extends THREE.Object3D {
     /***
      * @param {number} deltaTime
      */
-    animate(deltaTime, world) {
+    animate(deltaTime: number, world: World): void {
 
         let damping = Math.exp(- 4 * deltaTime) - 1;
         if (!this.onFloor) {
@@ -95,7 +99,7 @@ export class Player extends THREE.Object3D {
         this.colliderMesh.visible = Player.debug;
     }
 
-    teleport(position) {
+    teleport(position: THREE.Vector3): void {
         this.position.copy(position);
         this.collider.start.copy(position);
         this.collider.end.copy(position);
@@ -107,7 +111,7 @@ export class Player extends THREE.Object3D {
 
     }
 
-    getForwardVector() {
+    getForwardVector(): THREE.Vector3 {
 
         this.camera.getWorldDirection(this.direction);
         this.direction.y = 0;
@@ -117,7 +121,7 @@ export class Player extends THREE.Object3D {
 
     }
 
-    getSideVector() {
+    getSideVector(): THREE.Vector3 {
 
         this.camera.getWorldDirection(this.direction);
         this.direction.y = 0;

@@ -1,6 +1,14 @@
 import * as THREE from 'three';
 
-export class LaserBeam extends THREE.Object3D {
+interface LaserBeamEventMap extends THREE.Object3DEventMap  {
+    expired: LaserBeamExpiredEvent;
+}
+
+export interface LaserBeamExpiredEvent extends THREE.Event {
+    type: 'expired';
+}
+
+export class LaserBeam extends THREE.Object3D<LaserBeamEventMap> {
 
     color = 0x00ff00;
     thickness = 0.01;
@@ -8,12 +16,13 @@ export class LaserBeam extends THREE.Object3D {
     maxDistance = 35;
     distance = 0;
     speed = 10;
+    scene: THREE.Scene;
 
 /**
  * 
  * @param {THREE.Scene} scene 
  */
-    constructor(scene) {
+    constructor(scene: THREE.Scene) {
         super();
 
         this.scene = scene;
@@ -35,7 +44,7 @@ export class LaserBeam extends THREE.Object3D {
      * @param {THREE.Vector3} direction
      * @returns {LaserBeam}
      */
-    static shoot(scene, origin, direction) {
+    static shoot(scene: THREE.Scene, origin: THREE.Vector3, direction: THREE.Vector3) {
         const laser = new LaserBeam(scene);
         laser.position.copy(origin);
         laser.lookAt(direction);
@@ -44,14 +53,14 @@ export class LaserBeam extends THREE.Object3D {
         return laser;
     }
 
-    animate(deltaTime) {
+    animate(deltaTime: number) {
         this.distance += this.speed * deltaTime;
 
         //move in direction
         this.position.addScaledVector(this.getWorldDirection(new THREE.Vector3()), this.speed * deltaTime);
 
         if(this.distance > this.maxDistance) {
-            this.dispatchEvent({ type: 'expired' });
+            this.dispatchEvent({type: "expired"} as LaserBeamExpiredEvent);
             this.scene.remove(this);
         }
     }

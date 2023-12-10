@@ -3,6 +3,5 @@ import './main.css';
 
 document.addEventListener("DOMContentLoaded", function(){
     const app = new App();
-    app.init();
-    window.app = app;
+    (window as any).app = app;
 });

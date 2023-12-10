@@ -5,14 +5,18 @@ const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const artifact = require('./package.json');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
-const StylelintPlugin = require('stylelint-webpack-plugin');
-const ESLintPlugin = require('eslint-webpack-plugin');
 
 const fileName = `${artifact.name}-${artifact.version.slice(0, 3)}`;
 
 module.exports = (env, argv) => ({
     entry: {
-        [fileName]: './src/index.js',
+        [fileName]: './src/index.ts',
+    },
+    resolve: {
+        extensions: ['.ts', '.js']
+    },
+    watchOptions: {
+        ignored: /node_modules/
     },
     output: {
         filename: '[name].[fullhash].bundle.js',
@@ -21,14 +25,24 @@ module.exports = (env, argv) => ({
     },
     devServer: {
         historyApiFallback: true,
+        host: '0.0.0.0',
+        allowedHosts: 'all',
         open: true,
         compress: true,
         port: 8080,
-        http2: true,
-        https: {
-          key: fs.readFileSync('./server.pem'),
-          cert: fs.readFileSync('./server.pem'),
-        },
+        server: {
+            type: 'https',
+            options: {
+                key: fs.readFileSync('./server.pem'),
+                cert: fs.readFileSync('./server.pem'),
+            },
+        }
+    },
+    devtool: 'eval-source-map',
+    performance: {
+        hints: false,
+        maxEntrypointSize: 512000,
+        maxAssetSize: 512000,
     },
     module: {
         rules: [
@@ -37,14 +51,13 @@ module.exports = (env, argv) => ({
                 use: [
                     { loader: 'style-loader' },
                     { loader: 'css-loader', options: { sourceMap: true, importLoaders: 1 } },
-                    // { loader: 'postcss-loader', options: { sourceMap: true } },
                 ],
             },
-            // {
-            //     test: /\.js$/,
-            //     exclude: /(node_modules)/,
-            //     use: ['babel-loader'],
-            // },
+            {
+                test: /\.tsx?$/,
+                use: 'ts-loader',
+                exclude: /node_modules/,
+            },
             {
                 test: /\.(?:ico|gif|png|jpg|jpeg|webp|svg|stl|glb|ogg)$/i,
                 loader: 'file-loader',
@@ -80,13 +93,6 @@ module.exports = (env, argv) => ({
             template: path.resolve(__dirname, 'src/index.html'), // template file
             filename: 'index.html', // output file
             publicPath: './',
-        }),
-        new StylelintPlugin({ configFile: './.stylelintrc.json', context: 'src', files: '**/*.scss' }),
+        })
     ],
-    devtool: 'eval-source-map',
-    performance: {
-        hints: false,
-        maxEntrypointSize: 512000,
-        maxAssetSize: 512000,
-    },
 });

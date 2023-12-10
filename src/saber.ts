@@ -1,14 +1,25 @@
 import * as THREE from 'three';
-import { Actor } from './actor.js';
+import { Actor } from './actor';
+import { World } from './world';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-export class Saber extends THREE.Object3D {
+interface SaberEventMap extends THREE.Object3DEventMap  {
+    collision: SaberCollisionEvent;
+}
+
+interface SaberCollisionEvent extends THREE.Event {
+    type: 'collision';
+    collisions: Array<{
+        obj: Actor | THREE.Mesh,
+        intersection: THREE.Intersection
+    }>;
+}
+
+export class Saber extends THREE.Object3D<SaberEventMap> {
 
     static debug = false;
-    static soundBufferHumming = null;
-    static soundBufferInit = null;
-    static soundBufferSwing = null;
-    static #staticConstructorDummyResult = (function () {
+
+    static initialize() {
         //load audio     
         const audioLoader = new THREE.AudioLoader();
         Saber.soundBufferHumming = audioLoader.loadAsync('./sounds/saber-humming.ogg');
@@ -22,11 +33,16 @@ export class Saber extends THREE.Object3D {
         const gltfLoader = new GLTFLoader();
         Saber.model = gltfLoader.loadAsync('./models/saber.glb').then(gltf => {
             gltf.scene.scale.set(0.007, 0.007, 0.007);
-            gltf.scene.rotation.set(-Math.PI / 2, 0 , 0);
-            gltf.scene.position.set(0,0.005,0.02);
+            gltf.scene.rotation.set(-Math.PI / 2, 0, 0);
             return gltf;
         });
-    })()
+    }
+
+    static model: Promise<any>;
+    static textureFlare0: Promise<THREE.Texture>;
+    static soundBufferHumming: Promise<AudioBuffer>;
+    static soundBufferInit: Promise<AudioBuffer>;
+    static soundBufferSwing: Promise<AudioBuffer>;
 
     static ANIMATIONS = {
         NO: 0,
@@ -39,15 +55,28 @@ export class Saber extends THREE.Object3D {
 
     animation = Saber.ANIMATIONS.NO;
 
-    /**
-     * @param {THREE.Scene} scene
-     * @param {Promise<THREE.AudioListener>} audioListenerPromise
-     * @param {String} saberColor white, red or limegreen
-     */
-    constructor(scene, audioListenerPromise, saberColor = 0xff0000) {
+    scene: THREE.Scene;
+    saberColor: number;
+    handle: THREE.Group;
+    blade: THREE.Object3D;
+    light: THREE.PointLight;
+    lensPlane: THREE.Mesh | undefined;
+    handlePeak: THREE.Object3D;
+    bladePeak: THREE.Object3D;
+    raycaster: THREE.Raycaster;
+    soundHumming: THREE.PositionalAudio | undefined;
+    soundInit: THREE.PositionalAudio | undefined;
+    soundSwing: THREE.PositionalAudio | undefined;
+    initalRotationX = 0;
+    initalRotationY = 0;
+    initalRotationZ = 0;
+    camera: THREE.Camera;
+
+    constructor(scene: THREE.Scene, camera: THREE.Camera, audioListenerPromise: Promise<THREE.AudioListener>, saberColor = 0xff0000) {
         super();
 
         this.scene = scene;
+        this.camera = camera;
         this.saberColor = saberColor;
 
         this.initAudio(audioListenerPromise);
@@ -98,7 +127,6 @@ export class Saber extends THREE.Object3D {
 
         blade.add(light);
         this.blade = blade;
-        //hack to make sure material geometry is loaded, visibility managed by GPU
         this.blade.scale.setScalar(Saber.bladeScaleInitial);
 
         Saber.textureFlare0.then(textureFlare0 => {
@@ -115,13 +143,11 @@ export class Saber extends THREE.Object3D {
             this.scene.add(lensPlane);
         });
 
-        //handle peak: saber blade starts here
         const handlePeak = new THREE.Object3D();
         handlePeak.position.set(0, Saber.handleHeight, 0);
         this.handlePeak = handlePeak;
         handle.add(handlePeak);
 
-        //blade peak: saber blade ends here
         const bladePeak = new THREE.Object3D();
         bladePeak.position.set(0, Saber.handleHeight + Saber.bladeHeight, 0);
         this.bladePeak = bladePeak;
@@ -133,24 +159,21 @@ export class Saber extends THREE.Object3D {
         this.add(handle);
         this.add(blade);
         this.rotation.x = -Math.PI / 4;
-
-        // this.bounds = new THREE.Box3().setFromObject(this.blade);
-        // this.boundsHelper = new THREE.Box3Helper(this.bounds, 0xffff00);
-        // this.boundsHelper.visible = Saber.debug;
-        // this.scene.add(this.boundsHelper);
-
     }
 
-    setSaberColor(saberColor) {
+    setSaberColor(saberColor: number) {
         this.saberColor = saberColor;
-        this.blade.children[0].material.color.set(saberColor);
-        this.blade.children[0].material.emissive.set(saberColor);
-        this.blade.children[1].material.color.set(saberColor);
-        this.blade.children[1].material.emissive.set(saberColor);
-        this.blade.children[3].color.set(saberColor);
+        this.blade.traverse(child => {
+            if (child instanceof THREE.Mesh) {
+                child.material.color.set(saberColor);
+                child.material.emissive.set(saberColor);
+            } else if (child instanceof THREE.PointLight) {
+                child.color.set(saberColor);
+            }
+        });
     }
 
-    async initAudio(audioListenerPromise) {
+    async initAudio(audioListenerPromise: Promise<THREE.AudioListener>) {
         const audioListener = await audioListenerPromise;
         const bufferHumming = await Saber.soundBufferHumming;
         const soundHumming = new THREE.PositionalAudio(audioListener);
@@ -219,7 +242,7 @@ export class Saber extends THREE.Object3D {
         }
     }
 
-    setInitialRotation(x, y, z) {
+    setInitialRotation(x: number, y: number, z: number) {
         this.initalRotationX = x;
         this.initalRotationY = y;
         this.initalRotationZ = z;
@@ -233,15 +256,13 @@ export class Saber extends THREE.Object3D {
         if (this.soundSwing && this.isOn()) this.soundSwing.play();
     }
 
-    animate(deltaTime, world, enemys) {
+    animate(deltaTime: number, world: World, enemys: Array<Actor>) {
         if (this.isOn()) {
             this.blade.rotation.y += deltaTime * 0.5;
         }
 
         const maxSpeed = 30;
         if (this.animation == Saber.ANIMATIONS.SWING) {
-            //swing animation with start and end, end same position as start
-            //calculate speed based on z rotation, start fast, end slow
             const speed = maxSpeed * Math.max(0.5, Math.min(1, this.rotation.z / 2));
 
             this.rotation.z += deltaTime * speed;
@@ -258,24 +279,16 @@ export class Saber extends THREE.Object3D {
                 this.rotation.z = this.initalRotationZ
                 this.rotation.x = this.initalRotationX
                 this.animation = Saber.ANIMATIONS.NO;
-                this.soundSwing.stop();
+                if(this.soundSwing) this.soundSwing.stop();
             }
         }
         this.collide(world, enemys);
-        //this.boundsHelper.visible = Saber.debug;
     }
 
-    /**
-     * @param {World} world
-     * @param {Array<Actor>} enemys
-     */
-    collide(world, enemys) {
-        //this.bounds.setFromObject(this.blade, true);
-
+    collide(world: World, enemys: Array<Actor>) {
         if (this.isOn()) {
-
-            const colliders = enemys.map((enemy) => enemy.colliderMesh);
-            colliders.push(world.map);
+            const colliders: Array<THREE.Object3D> = enemys.map((enemy) => enemy.colliderMesh);
+            if(world.map) colliders.push(world.map);
 
             const rayOrigin = this.handle.getWorldPosition(new THREE.Vector3());
             const rayDirection = this.bladePeak.getWorldPosition(new THREE.Vector3()).sub(rayOrigin).normalize();
@@ -290,43 +303,37 @@ export class Saber extends THREE.Object3D {
                     intersection: inters
                 }
             })
-            .filter((col) => col.intersection);
+                .filter((col) => col.intersection);
 
             if (collisions.length > 0) {
-                this.dispatchEvent({ type: 'collide', collisions: collisions });
-                //this.setSaberColor(0x00ff00);
+                this.dispatchEvent({ type: "collision", collisions: collisions } as SaberCollisionEvent);
+                
                 collisions.forEach(col => {
                     const point = col.intersection.point;
                     const distance = col.intersection.distance;
-                    //translate to local space
                     this.collisionEffect(point, distance);
-                    if(col.obj && col.obj.damage) //col.obj instanceof Actor
+                    if (col.obj && col.obj.damage)
                         col.obj.damage(5);
                 });
             } else {
-                //this.setSaberColor(0xff0000);
-                this.collisionEffect();
+                this.hideCollisionEffect();
             }
-
         }
     }
 
-    collisionEffect(point, distance) {
-        if (point) {
-            this.lensPlane.visible = true;
-            this.lensPlane.position.copy(point);
-            this.lensPlane.quaternion.copy(app.camera.quaternion);
+    collisionEffect(point: THREE.Vector3, distance: number) {
+        if(this.lensPlane === undefined) return;
+        this.lensPlane.visible = true;
+        this.lensPlane.position.copy(point);
+        this.lensPlane.quaternion.copy(this.camera.quaternion);
 
-            // //global position to local position
-            // let localPoint = this.blade.worldToLocal(point);
-            // //substract vector from local point
-            // localPoint = localPoint.sub(this.bladePeak.position).normalize().multiplyScalar(0.1);
-            this.light.position.y = distance - Saber.bladeHeight * 0.5 - 0.5;
-
-        } else {
-            this.lensPlane.visible = false;
-            this.light.position.y = 0;
-        }
+        this.light.position.y = distance - Saber.bladeHeight * 0.5 - 0.5;
     }
 
+    hideCollisionEffect() {
+        if(this.lensPlane === undefined) return;
+        this.lensPlane.visible = false;
+        this.light.position.y = 0;
+    }
 }
+Saber.initialize();
