@@ -36,11 +36,9 @@ export class App {
     private trigger1Released = true;
     private trigger2Released = true;
 
-    private audioListenerPromise = new Promise<THREE.AudioListener>((resolve) => {
-        this.setAudioListener = resolve;
-    });
+    private audioListenerPromise: any;
     private container: HTMLDivElement;
-    private setAudioListener: any;
+    public setAudioListener: any;
 
     constructor() {
         this.clock = new THREE.Clock();
@@ -62,6 +60,10 @@ export class App {
         document.body.appendChild(VRButton.createButton(this.renderer));
 
         this.container.appendChild( this.stats.dom );
+
+        this.audioListenerPromise = new Promise<THREE.AudioListener>((resolve) => {
+            this.setAudioListener = resolve;
+        });
 
         this.init();
     }
@@ -215,7 +217,7 @@ export class App {
     initSaberAndHand() {
         if(!this.scene || !this.player) return;
         this.saber = new Saber(this.scene, this.player.camera, this.audioListenerPromise);
-        this.hand = new Hand(this.scene);
+        this.hand = new Hand(this.scene, this.audioListenerPromise);
     }
 
     setupSaberAndHand(xr=false) {

@@ -24,8 +24,14 @@ export class Hand extends THREE.Object3D<HandEventMap> {
     skeleton: THREE.Skeleton | null;
     handDirection: THREE.Object3D<THREE.Object3DEventMap>;
     line: THREE.Line<THREE.BufferGeometry<THREE.NormalBufferAttributes>, THREE.LineDashedMaterial>;
+    static soundBufferForcePull: Promise<AudioBuffer>;
+    soundForcePull: THREE.PositionalAudio | undefined;
 
     static initialize () {
+        //load audio     
+        const audioLoader = new THREE.AudioLoader();
+        Hand.soundBufferForcePull = audioLoader.loadAsync('./sounds/force-pull.ogg');
+
         //load model     
         const gltfLoader = new GLTFLoader();
         Hand.model = gltfLoader.loadAsync('./models/hand.glb').then(gltf => {
@@ -62,14 +68,17 @@ export class Hand extends THREE.Object3D<HandEventMap> {
 
     /**
      * 
-     * @param {THREE.Scene} scene 
+     * @param {THREE.Scene} scene
+     * @param {Promise<THREE.AudioListener>} audioListenerPromise
      */
-    constructor(scene: THREE.Scene) {
+    constructor(scene: THREE.Scene, audioListenerPromise: Promise<THREE.AudioListener>) {
         super();
 
         this.scene = scene;
         this.bones = {};
         this.skeleton = null;
+
+        this.initAudio(audioListenerPromise);
 
         Hand.model.then(gltf => {
             const model = SkeletonUtils.clone( gltf.scene );
@@ -101,6 +110,15 @@ export class Hand extends THREE.Object3D<HandEventMap> {
         line.computeLineDistances();
         this.add(line);
         this.line = line;
+    }
+
+    async initAudio(audioListenerPromise: Promise<THREE.AudioListener>) {
+        const audioListener = await audioListenerPromise;
+        const bufferForcePull = await Hand.soundBufferForcePull;
+        const soundForcePull = new THREE.PositionalAudio(audioListener);
+        soundForcePull.setBuffer(bufferForcePull);
+        this.add(soundForcePull);
+        this.soundForcePull = soundForcePull;
     }
 
     animate(deltaTime: number, world: World | undefined, enemys: Actor[]) {
@@ -183,11 +201,19 @@ export class Hand extends THREE.Object3D<HandEventMap> {
     }
 
     forcePull() {
+        if (this.soundForcePull) {
+            this.soundForcePull.setVolume(1.0);
+            this.soundForcePull.play();
+        }
         this.force = true;
         this.closeHand();
     }
 
     forceRelease() {
+        if (this.soundForcePull) {
+            this.soundForcePull.setVolume(0.0);
+            setTimeout(() => { this.soundForcePull?.stop(); }, 10);
+        }
         this.force = false;
         this.openHand();
     }
