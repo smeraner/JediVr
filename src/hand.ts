@@ -41,10 +41,10 @@ export class Hand extends THREE.Object3D<HandEventMap> {
             gltf.scene.traverse(child => {
                 const mesh = child as THREE.Mesh;
                 if (mesh.isMesh && mesh.material) {
-                    mesh.material = new THREE.MeshStandardMaterial({
+                    mesh.material = new THREE.MeshPhongMaterial({
                         color: 0x000000,
-                        roughness: 0,
-                        metalness: 1
+                        specular: 0x111111,
+                        shininess: 200,
                     });
                 }
             });

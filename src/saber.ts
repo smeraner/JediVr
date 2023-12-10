@@ -92,28 +92,19 @@ export class Saber extends THREE.Object3D<SaberEventMap> {
         blade.position.set(0, Saber.handleHeight * 0.5, 0);
 
         const bladeGeometry = new THREE.CylinderGeometry(0.013, 0.013, Saber.bladeHeight, 8, 1, false);
-        const bladeMaterial = new THREE.MeshStandardMaterial({
+        const bladeMaterial = new THREE.MeshBasicMaterial({
             color: saberColor,
-            emissive: saberColor,
-            emissiveIntensity: 1,
-            flatShading: false,
             side: THREE.DoubleSide,
-            roughness: 1,
-            metalness: 0,
         });
         const bladeMesh = new THREE.Mesh(bladeGeometry, bladeMaterial);
         blade.add(bladeMesh);
 
         const bladeGlowGeometry = new THREE.CylinderGeometry(0.02, 0.02, Saber.bladeHeight, 8, 1, false);
-        const bladeGlowMaterial = new THREE.MeshStandardMaterial({
+        const bladeGlowMaterial = new THREE.MeshBasicMaterial({
             color: saberColor,
-            emissive: saberColor,
-            emissiveIntensity: 1,
             transparent: true,
             opacity: 0.15,
-            side: THREE.DoubleSide,
-            roughness: 1,
-            metalness: 0,
+            side: THREE.DoubleSide
         });
         const bladeGlowMesh = new THREE.Mesh(bladeGlowGeometry, bladeGlowMaterial);
         blade.add(bladeGlowMesh);

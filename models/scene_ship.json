@@ -57,16 +57,10 @@
 	"materials": [
 		{
 			"uuid": "cec8dc95-3f5b-47a1-beb6-532b4f178a22",
-			"type": "MeshStandardMaterial",
+			"type": "MeshBasicMaterial",
 			"name": "HemisphereMaterial",
 			"color": 16777215,
-			"roughness": 1,
-			"metalness": 0,
-			"emissive": 0,
 			"map": "0b1d4211-0330-449b-9688-2ea14230b61b",
-			"lightMap": "0b1d4211-0330-449b-9688-2ea14230b61b",
-			"lightMapIntensity": 1,
-			"envMapIntensity": 1,
 			"side": 1,
 			"blendColor": 0,
 			"fog": false

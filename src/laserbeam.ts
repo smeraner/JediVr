@@ -28,7 +28,7 @@ export class LaserBeam extends THREE.Object3D<LaserBeamEventMap> {
         this.scene = scene;
         
         const laserGeometry = new THREE.CylinderGeometry(this.thickness, this.thickness, this.length, 8);
-        const laserMaterial = new THREE.MeshStandardMaterial({ color: this.color, emissive: this.color, emissiveIntensity: 1, metalness: 0, roughness: 1 });
+        const laserMaterial = new THREE.MeshBasicMaterial({ color: this.color });
         const laserMesh = new THREE.Mesh(laserGeometry, laserMaterial);
 
         laserMesh.rotation.x = Math.PI / 2;
