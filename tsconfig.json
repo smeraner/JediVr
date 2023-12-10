@@ -8,6 +8,7 @@
     "noImplicitAny": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "strict": true
+    "strict": true,
+    "sourceMap": true,
   }
 }

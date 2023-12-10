@@ -51,7 +51,7 @@ export class Saber extends THREE.Object3D<SaberEventMap> {
     }
     static handleHeight = 0.2;
     static bladeHeight = 1.2;
-    static bladeScaleInitial = 0.01;
+    static bladeScaleInitial = 0.001;
 
     animation = Saber.ANIMATIONS.NO;
 

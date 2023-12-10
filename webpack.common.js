@@ -38,7 +38,7 @@ module.exports = (env, argv) => ({
             },
         }
     },
-    devtool: 'eval-source-map',
+    devtool: 'inline-source-map',
     performance: {
         hints: false,
         maxEntrypointSize: 512000,
