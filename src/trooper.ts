@@ -18,6 +18,7 @@ export class Trooper extends Actor {
     static debug = false;
     static model: Promise<any>;
     static soundBufferDead: Promise<AudioBuffer>;
+    static soundBufferLaser: Promise<AudioBuffer>;
     static modes = {
         idle: 0,
         walk: 1,
@@ -31,11 +32,14 @@ export class Trooper extends Actor {
     TPoseAction: any;
     actions: any[] = [];
     soundDead: THREE.PositionalAudio | undefined;
+    soundLaser: THREE.PositionalAudio | undefined;
+    audioListenerPromise: Promise<THREE.AudioListener>;
 
     static initialize() {
         //load audio     
         const audioLoader = new THREE.AudioLoader();
         Trooper.soundBufferDead = audioLoader.loadAsync('./sounds/trooper_dead.ogg');
+        Trooper.soundBufferLaser = audioLoader.loadAsync('./sounds/laser.ogg');
 
         //load model     
         const gltfLoader = new GLTFLoader();
@@ -64,6 +68,7 @@ export class Trooper extends Actor {
         this.collider = new Capsule(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, this.colliderHeight, 0), this.colliderRadius);
         this.colliderMesh.geometry = new THREE.CapsuleGeometry(this.collider.radius, this.collider.end.y - this.collider.start.y);
 
+        this.audioListenerPromise = audioListenerPromise;
         this.initAudio(audioListenerPromise);
 
         Trooper.model.then((gltf: { scene: THREE.Object3D<THREE.Object3DEventMap>; animations: any; }) => {
@@ -92,7 +97,7 @@ export class Trooper extends Actor {
         });
     }
 
-    private async initAudio(audioListenerPromise: any) {
+    private async initAudio(audioListenerPromise: Promise<THREE.AudioListener>) {
         const audioListener = await audioListenerPromise;
         const bufferDead = await Trooper.soundBufferDead;
         const soundDead = new THREE.PositionalAudio(audioListener);
@@ -100,6 +105,13 @@ export class Trooper extends Actor {
         soundDead.setVolume(0.5);
         this.add(soundDead);
         this.soundDead = soundDead;
+
+        const bufferLaser = await Trooper.soundBufferLaser;
+        const soundLaser = new THREE.PositionalAudio(audioListener);
+        soundLaser.setBuffer(bufferLaser);
+        soundLaser.setVolume(0.5);
+        this.add(soundLaser);
+        this.soundLaser = soundLaser;
     }
 
     private setAnimationWeight(action: { enabled: boolean; setEffectiveTimeScale: (arg0: number) => void; setEffectiveWeight: (arg0: any) => void; }, weight: number) {
@@ -112,6 +124,7 @@ export class Trooper extends Actor {
         super.die();
         if (this.soundDead) this.soundDead.play();
         if(this.mixer) this.mixer.stopAllAction();
+        this.quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
         this.mode = Trooper.modes.idle;
         this.rotation.x = -Math.PI/2;
         this.setAnimationWeight(this.TPoseAction, 1);
@@ -170,11 +183,12 @@ export class Trooper extends Actor {
             const direction = player.position.clone().sub(this.position).normalize();
             const centerPosition = this.position.clone();
             centerPosition.y += this.colliderHeight;
-            const laser = LaserBeam.shoot(this.scene, centerPosition, direction);
+            const laser = LaserBeam.shoot(this.scene, this.audioListenerPromise, centerPosition, direction);
             this.laserBeams.push(laser);
             laser.addEventListener('expired', () => {
                 this.laserBeams.splice(this.laserBeams.indexOf(laser), 1);
             });
+            this.soundLaser?.play();
         }
     }
 

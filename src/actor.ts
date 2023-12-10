@@ -128,9 +128,9 @@ export class Actor extends THREE.Object3D<ActorEventMap> implements DamageableOb
      * Handles the actor's death.
      */
     die() {
-        console.log(this, 'dead');
         this.health = 0;
         this.colliderMesh.layers.disable(0);
+        console.log(this, 'dead');
     }
 
     isDead(): boolean {

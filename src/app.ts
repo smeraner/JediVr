@@ -36,7 +36,7 @@ export class App {
     private trigger1Released = true;
     private trigger2Released = true;
 
-    private audioListenerPromise: any;
+    private audioListenerPromise: Promise<THREE.AudioListener>;
     private container: HTMLDivElement;
     public setAudioListener: any;
 
