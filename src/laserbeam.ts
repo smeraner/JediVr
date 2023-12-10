@@ -20,6 +20,8 @@ export class LaserBeam extends THREE.Object3D<LaserBeamEventMap> {
     speed = 10;
     scene: THREE.Scene;
     direction = new THREE.Vector3();
+    raycaster: THREE.Raycaster;
+    worldDirection = new THREE.Vector3();
 
 /**
  * 
@@ -37,6 +39,8 @@ export class LaserBeam extends THREE.Object3D<LaserBeamEventMap> {
         laserMesh.rotation.x = Math.PI / 2;
         laserMesh.position.z = this.length / 2;
 
+        this.raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(), 0, 1);
+
         this.add(laserMesh);
     }
 
@@ -51,21 +55,37 @@ export class LaserBeam extends THREE.Object3D<LaserBeamEventMap> {
         const laser = new LaserBeam(scene);
         laser.position.copy(origin);
         laser.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
+        laser.worldDirection = laser.getWorldDirection(laser.direction);
         //laser.lookAt(direction);
 
         scene.add(laser);
         return laser;
     }
 
+    expire() {
+        this.dispatchEvent({type: "expired"} as LaserBeamExpiredEvent);
+        this.scene.remove(this);
+    }
+
     update(deltaTime: number, world: World, player: Player) {
         this.distance += this.speed * deltaTime;
 
         //move in direction
-        this.position.addScaledVector(this.getWorldDirection(this.direction), this.speed * deltaTime);
+        
+        this.position.addScaledVector(this.worldDirection, this.speed * deltaTime);
 
+        //check collision
         if(this.distance > this.maxDistance) {
-            this.dispatchEvent({type: "expired"} as LaserBeamExpiredEvent);
-            this.scene.remove(this);
+            this.expire();
+        } else {
+            this.raycaster.ray.origin.copy(this.position);
+            this.raycaster.ray.direction.copy(this.worldDirection);
+            const result = this.raycaster.intersectObject(player.colliderMesh);
+            if(result.length > 0) {
+                player.damage(1);
+                this.expire();
+            }
+
         }
     }
 }

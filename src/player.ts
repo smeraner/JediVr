@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { World } from './world';
 import { Capsule } from 'three/addons/math/Capsule.js';
 
-export class Player extends THREE.Object3D {
+export class Player extends THREE.Object3D implements DamageableObject {
     static debug = false;
 
     gravity = 0;
@@ -16,6 +16,9 @@ export class Player extends THREE.Object3D {
     scene: THREE.Scene;
     camera: THREE.PerspectiveCamera;
     colliderMesh: THREE.Mesh<THREE.CapsuleGeometry, THREE.MeshBasicMaterial, THREE.Object3DEventMap>;
+    health: number = 100;
+    damageMultiplyer: number = 0.1;
+    filterMesh: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial, THREE.Object3DEventMap>;
 
     /**
      * @param {THREE.Scene} scene
@@ -58,6 +61,14 @@ export class Player extends THREE.Object3D {
         //connect audio listener as soon as it is ready
         this.initAudio(audioListenerPromise);
 
+        let filterGeometry = new THREE.SphereGeometry(0.5, 15, 32); // camera near is 0.1, camera goes inside this sphere
+        let filterMaterial = new THREE.MeshBasicMaterial({color: 0xff0000, transparent: true, opacity: 0.35, side: THREE.BackSide});
+        let filterMesh = new THREE.Mesh(filterGeometry, filterMaterial);
+        filterMesh.visible = false;
+        this.camera.add(filterMesh);
+        this.filterMesh = filterMesh;
+
+        //collider
         const capsuleGeometry = new THREE.CapsuleGeometry(this.collider.radius, this.collider.end.y - this.collider.start.y);
         const capsuleMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true });
         const colliderMesh = new THREE.Mesh(capsuleGeometry, capsuleMaterial);
@@ -65,6 +76,25 @@ export class Player extends THREE.Object3D {
         this.colliderMesh = colliderMesh;
         this.scene.add(colliderMesh);
         this.colliderMesh.visible = Player.debug;
+    }
+
+    /**
+     * Process inbound damage
+     * @param {number} amount
+     */
+    damage(amount: number) {
+        if(this.health === 0) return;
+        
+        this.health -= amount * this.damageMultiplyer;
+        if (this.health <= 0) {
+            this.health = 0;
+        }
+
+        //hit animation, turn camera red 1 sec
+        this.filterMesh.visible = true;
+        setTimeout(() => {
+            this.filterMesh.visible = false;
+        }, 200);
     }
 
     getCamera(): THREE.PerspectiveCamera {

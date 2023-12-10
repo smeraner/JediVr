@@ -11,7 +11,7 @@ interface ActorDeadEvent extends THREE.Event {
     type: 'dead';
 }
 
-export class Actor extends THREE.Object3D<ActorEventMap> {
+export class Actor extends THREE.Object3D<ActorEventMap> implements DamageableObject {
     static debug = false;
     
     gravity = 0;

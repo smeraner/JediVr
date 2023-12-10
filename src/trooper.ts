@@ -41,13 +41,6 @@ export class Trooper extends Actor {
         const gltfLoader = new GLTFLoader();
         Trooper.model = gltfLoader.loadAsync('./models/trooper.glb').then(gltf => {
             gltf.scene.rotation.y = Math.PI;
-            gltf.scene.traverse(child => {
-                const mesh = child as THREE.Mesh;
-                if (mesh.isMesh) {
-                    mesh.castShadow = true;
-                    mesh.receiveShadow = true;
-                }
-            });
             return gltf;
         });
     }
@@ -138,9 +131,9 @@ export class Trooper extends Actor {
 
             //update mode
             const distance = this.position.distanceTo(player.position);
-            if(distance < 10) {
+            if(distance < 15) {
                 this.mode = Trooper.modes.fight;
-            } else if(distance < 20) {
+            } else if(distance < 25) {
                 this.mode = Trooper.modes.suspicious;
             } else {
                 this.mode = Trooper.modes.idle;
