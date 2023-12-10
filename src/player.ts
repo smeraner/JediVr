@@ -99,7 +99,7 @@ export class Player extends THREE.Object3D {
     /***
      * @param {number} deltaTime
      */
-    animate(deltaTime: number, world: World): void {
+    update(deltaTime: number, world: World): void {
 
         let damping = Math.exp(- 4 * deltaTime) - 1;
         if (!this.onFloor) {

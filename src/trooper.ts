@@ -18,6 +18,13 @@ export class Trooper extends Actor {
     static debug = false;
     static model: Promise<any>;
     static soundBufferDead: Promise<AudioBuffer>;
+    static modes = {
+        idle: 0,
+        walk: 1,
+        run: 2,
+        suspicious: 3,
+        fight: 4
+    };
     idleAction: any;
     walkAction: any;
     runAction: any;
@@ -33,6 +40,7 @@ export class Trooper extends Actor {
         //load model     
         const gltfLoader = new GLTFLoader();
         Trooper.model = gltfLoader.loadAsync('./models/trooper.glb').then(gltf => {
+            gltf.scene.rotation.y = Math.PI;
             gltf.scene.traverse(child => {
                 const mesh = child as THREE.Mesh;
                 if (mesh.isMesh) {
@@ -49,6 +57,7 @@ export class Trooper extends Actor {
     mixer: THREE.AnimationMixer | undefined;
     model: THREE.Object3D<THREE.Object3DEventMap> | undefined;
     laserBeams: Array<LaserBeam> = [];
+    mode = Trooper.modes.idle;
 
     /**
      * 
@@ -87,15 +96,10 @@ export class Trooper extends Actor {
                 action.play();
             });
 
-            // if(Trooper.debug) {
-            //     const box3 = new THREE.Box3().setFromObject(this);
-            //     const box = new THREE.Box3Helper(box3, 0xffff00);
-            //     this.add(box);
-            // }
         });
     }
 
-    async initAudio(audioListenerPromise: any) {
+    private async initAudio(audioListenerPromise: any) {
         const audioListener = await audioListenerPromise;
         const bufferDead = await Trooper.soundBufferDead;
         const soundDead = new THREE.PositionalAudio(audioListener);
@@ -105,7 +109,7 @@ export class Trooper extends Actor {
         this.soundDead = soundDead;
     }
 
-    setAnimationWeight(action: { enabled: boolean; setEffectiveTimeScale: (arg0: number) => void; setEffectiveWeight: (arg0: any) => void; }, weight: number) {
+    private setAnimationWeight(action: { enabled: boolean; setEffectiveTimeScale: (arg0: number) => void; setEffectiveWeight: (arg0: any) => void; }, weight: number) {
         action.enabled = true;
         action.setEffectiveTimeScale(1);
         action.setEffectiveWeight(weight);
@@ -115,6 +119,7 @@ export class Trooper extends Actor {
         super.die();
         if (this.soundDead) this.soundDead.play();
         if(this.mixer) this.mixer.stopAllAction();
+        this.mode = Trooper.modes.idle;
         this.rotation.x = -Math.PI/2;
         this.setAnimationWeight(this.TPoseAction, 1);
     }
@@ -126,11 +131,49 @@ export class Trooper extends Actor {
      * @param {World} world
      * @param {THREE.Object3D} player 
      */
-    animate(deltaTime: number, world: World, player: Player) {
-        super.animate(deltaTime, world, player);
+    update(deltaTime: number, world: World, player: Player) {
+        super.update(deltaTime, world, player);
 
-        //random shoot laser beam in direction of player
-        if(this.health > 0 && this.laserBeams.length < 5 && Math.random() < 0.001) {
+        if(!this.isDead()) {
+
+            //update mode
+            const distance = this.position.distanceTo(player.position);
+            if(distance < 10) {
+                this.mode = Trooper.modes.fight;
+            } else if(distance < 20) {
+                this.mode = Trooper.modes.suspicious;
+            } else {
+                this.mode = Trooper.modes.idle;
+            }
+
+            //update animation
+            switch(this.mode) {
+                case Trooper.modes.idle:
+                    break;
+                case Trooper.modes.suspicious:
+                    this.lookAt(player.position);
+                    break;
+                case Trooper.modes.fight:
+                    this.lookAt(player.position);
+                    this.fight(player);
+                    break;
+            }
+            if(this.mixer) this.mixer.update(deltaTime);
+        }
+
+        //update laser beams
+        this.laserBeams.forEach(laser => {
+            laser.update(deltaTime, world, player);
+        });
+
+    }
+
+    /**
+     * random shoot laser beam in direction of player
+     * @param {THREE.Object3D} player 
+     */
+    private fight(player: THREE.Object3D) {
+        if (this.laserBeams.length < 5 && Math.random() < 0.001) {
             const direction = player.position.clone().sub(this.position).normalize();
             const centerPosition = this.position.clone();
             centerPosition.y += this.colliderHeight;
@@ -140,13 +183,6 @@ export class Trooper extends Actor {
                 this.laserBeams.splice(this.laserBeams.indexOf(laser), 1);
             });
         }
-
-        //update laser beams
-        this.laserBeams.forEach(laser => {
-            laser.animate(deltaTime);
-        });
-
-        if(this.mixer) this.mixer.update(deltaTime);
     }
 
     dispose() {

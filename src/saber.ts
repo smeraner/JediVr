@@ -247,7 +247,7 @@ export class Saber extends THREE.Object3D<SaberEventMap> {
         if (this.soundSwing && this.isOn()) this.soundSwing.play();
     }
 
-    animate(deltaTime: number, world: World, enemys: Array<Actor>) {
+    update(deltaTime: number, world: World, enemys: Array<Actor>) {
         if (this.isOn()) {
             this.blade.rotation.y += deltaTime * 0.5;
         }

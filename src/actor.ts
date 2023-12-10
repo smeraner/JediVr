@@ -26,6 +26,7 @@ export class Actor extends THREE.Object3D<ActorEventMap> {
 
     velocity = new THREE.Vector3();
     direction = new THREE.Vector3();
+    lookingDirection = new THREE.Vector3();
     scene: THREE.Scene;
 
     /**
@@ -78,7 +79,7 @@ export class Actor extends THREE.Object3D<ActorEventMap> {
      * @param {World} world
      * @param {THREE.Player} player
      */
-    animate(deltaTime: number, world: World, player: Player) {
+    update(deltaTime: number, world: World, player: Player) {
         let damping = Math.exp(- 4 * deltaTime) - 1;
         if (!this.onFloor) {
             this.velocity.y -= this.gravity * deltaTime;
@@ -128,7 +129,12 @@ export class Actor extends THREE.Object3D<ActorEventMap> {
      */
     die() {
         console.log(this, 'dead');
+        this.health = 0;
         this.colliderMesh.layers.disable(0);
+    }
+
+    isDead(): boolean {
+        return this.health <= 0;
     }
 
     /**

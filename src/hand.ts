@@ -121,7 +121,7 @@ export class Hand extends THREE.Object3D<HandEventMap> {
         this.soundForcePull = soundForcePull;
     }
 
-    animate(deltaTime: number, world: World | undefined, enemys: Actor[]) {
+    update(deltaTime: number, world: World | undefined, enemys: Actor[]) {
         if(!this.skeleton) return;
 
         const handRoot = this.skeleton.bones[0].children[0];

@@ -33,7 +33,7 @@ const prevGamePads = new Map();
 var speedFactor = [0.1, 0.1, 0.1, 0.1];
 
 init();
-animate();
+update();
 
 function init() {
   container = document.createElement("div");
@@ -270,7 +270,7 @@ function cleanIntersected() {
   }
 }
 
-function animate() {
+function update() {
   renderer.setAnimationLoop(render);
 }
 

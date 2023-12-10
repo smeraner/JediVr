@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { Player } from './player';
+import { World } from './world';
 
 interface LaserBeamEventMap extends THREE.Object3DEventMap  {
     expired: LaserBeamExpiredEvent;
@@ -17,6 +19,7 @@ export class LaserBeam extends THREE.Object3D<LaserBeamEventMap> {
     distance = 0;
     speed = 10;
     scene: THREE.Scene;
+    direction = new THREE.Vector3();
 
 /**
  * 
@@ -47,17 +50,18 @@ export class LaserBeam extends THREE.Object3D<LaserBeamEventMap> {
     static shoot(scene: THREE.Scene, origin: THREE.Vector3, direction: THREE.Vector3) {
         const laser = new LaserBeam(scene);
         laser.position.copy(origin);
-        laser.lookAt(direction);
+        laser.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
+        //laser.lookAt(direction);
 
         scene.add(laser);
         return laser;
     }
 
-    animate(deltaTime: number) {
+    update(deltaTime: number, world: World, player: Player) {
         this.distance += this.speed * deltaTime;
 
         //move in direction
-        this.position.addScaledVector(this.getWorldDirection(new THREE.Vector3()), this.speed * deltaTime);
+        this.position.addScaledVector(this.getWorldDirection(this.direction), this.speed * deltaTime);
 
         if(this.distance > this.maxDistance) {
             this.dispatchEvent({type: "expired"} as LaserBeamExpiredEvent);

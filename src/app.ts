@@ -102,7 +102,7 @@ export class App {
             }
         });
 
-        this.renderer.setAnimationLoop(this.animate.bind(this));
+        this.renderer.setAnimationLoop(this.update.bind(this));
     }
 
     initDebugGui() {
@@ -387,7 +387,7 @@ export class App {
         }
     }
 
-    public animate(): void {
+    public update(): void {
         if(!this.player || !this.scene || !this.world) return;
 
         const deltaTime = Math.min(0.05, this.clock.getDelta()) / this.STEPS_PER_FRAME;
@@ -395,16 +395,16 @@ export class App {
         for (let i = 0; i < this.STEPS_PER_FRAME; i++) {
             this.controls(deltaTime);
 
-            if(this.world) this.player.animate(deltaTime, this.world);
-            if (this.saber && this.world) this.saber.animate(deltaTime, this.world, this.enemys);
-            if (this.hand) this.hand.animate(deltaTime, this.world, this.enemys);
+            if(this.world) this.player.update(deltaTime, this.world);
+            if (this.saber && this.world) this.saber.update(deltaTime, this.world, this.enemys);
+            if (this.hand) this.hand.update(deltaTime, this.world, this.enemys);
 
             for (let i = 0; i < this.enemys.length; i++) {
                 const enemy = this.enemys[i];
-                enemy.animate(deltaTime, this.world, this.player);
+                enemy.update(deltaTime, this.world, this.player);
             }
 
-            if (this.world) this.world.animate(deltaTime);
+            if (this.world) this.world.update(deltaTime);
 
             this.teleportPlayerIfOob();
         }

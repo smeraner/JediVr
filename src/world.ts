@@ -104,7 +104,7 @@ export class World extends THREE.Object3D {
         return scene as THREE.Scene;
     }
 
-    animate(deltaTime: number) {
+    update(deltaTime: number) {
 
     }
 
