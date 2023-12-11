@@ -67,12 +67,8 @@
 		},
 		{
 			"uuid": "60274c9b-b86d-4dcf-a442-302698657e25",
-			"type": "MeshStandardMaterial",
+			"type": "MeshBasicMaterial",
 			"color": 16777215,
-			"roughness": 1,
-			"metalness": 0,
-			"emissive": 16777215,
-			"envMapIntensity": 1,
 			"side": 2,
 			"opacity": 0.2,
 			"transparent": true,
