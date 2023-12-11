@@ -178,6 +178,18 @@ export class Hand extends THREE.Object3D<HandEventMap> {
         this.animationSpeed = 3;
     }
 
+    setHandOpen(value: number) {
+        if(!this.skeleton) return;
+        const handRoot = this.skeleton.bones[0].children[0];
+        handRoot.children.forEach(finger => {
+            let bone = finger.children[0];
+            while(bone) {
+                bone.rotation.x = -value;
+                bone = bone.children[0];
+            }
+        });
+    }
+
     collide(world: World | undefined, enemys: Actor[]): void {
         if(!this.force) return;
 
@@ -197,13 +209,17 @@ export class Hand extends THREE.Object3D<HandEventMap> {
         }
     }
 
-    forcePull() {
-        if (this.soundForcePull) {
+    forcePull(value?: number) {
+        if (this.soundForcePull && !this.soundForcePull.isPlaying) {
             this.soundForcePull.setVolume(1.0);
             this.soundForcePull.play();
         }
         this.force = true;
-        this.closeHand();
+        if(value) {
+            this.setHandOpen(value);
+        } else {
+            this.closeHand();
+        }
     }
 
     forceRelease() {

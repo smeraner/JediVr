@@ -354,7 +354,7 @@ export class App {
             }
 
             if (this.controller1.gamepad.buttons[1].pressed) {
-                this.hand.forcePull();
+                this.hand.forcePull(this.controller1.gamepad.buttons[1].value);
             } else {
                 this.hand.forceRelease();
             }
