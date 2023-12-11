@@ -250,8 +250,10 @@ export class App {
 
         this.controller1 = this.renderer.xr.getController(0);
         this.controller1.addEventListener('connected', (e: any) => {
+            const handednessLeft = e.data.handedness === 'left';
+            this.controller1.handednessLeft = handednessLeft;
             this.controller1.gamepad = e.data.gamepad;
-            this.controller1.add(this.saber);
+            this.controller1.add(handednessLeft? this.hand : this.saber);
         });
         this.controller1.addEventListener('disconnected', (e: any) => {
             this.controller1.gamepad = null;
@@ -260,8 +262,10 @@ export class App {
 
         this.controller2 = this.renderer.xr.getController(1);
         this.controller2.addEventListener('connected', (e: any) => {
+            const handednessLeft = e.data.handedness === 'left';
+            this.controller2.handednessLeft = handednessLeft;
             this.controller2.gamepad = e.data.gamepad;
-            this.controller2.add(this.hand);
+            this.controller2.add(handednessLeft? this.hand : this.saber);
         });
         this.controller2.addEventListener('disconnected', (e: any) => {
             this.controller2.gamepad = null;
@@ -360,6 +364,8 @@ export class App {
 
             if (this.controller2.gamepad.buttons[1].pressed) {
                 this.hand.forcePull();
+            } else {
+                this.hand.forceRelease();
             }
 
             if (this.controller2.gamepad.axes[2] > 0.2) {
