@@ -236,7 +236,7 @@ export class App {
             this.saber.setInitialRotation(-Math.PI/4,0,0);
             this.player.camera.remove(this.saber);
 
-            this.hand.position.set(0,0,0);
+            this.hand.position.set(0,0,0.1);
             this.hand.rotation.set(-Math.PI/2,0,0);
             this.player.camera.remove(this.hand);
         }
