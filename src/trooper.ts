@@ -45,6 +45,11 @@ export class Trooper extends Actor {
         const gltfLoader = new GLTFLoader();
         Trooper.model = gltfLoader.loadAsync('./models/trooper.glb').then(gltf => {
             gltf.scene.rotation.y = Math.PI;
+            gltf.scene.traverse(child => {
+                const mesh = child as THREE.Mesh;
+                mesh.castShadow = false;
+                mesh.receiveShadow = false;
+            });
             return gltf;
         });
     }

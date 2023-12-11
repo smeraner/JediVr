@@ -40,6 +40,8 @@ export class Hand extends THREE.Object3D<HandEventMap> {
             gltf.scene.rotation.set(4.8,0,2)
             gltf.scene.traverse(child => {
                 const mesh = child as THREE.Mesh;
+                mesh.castShadow = false;
+                mesh.receiveShadow = false;
                 if (mesh.isMesh && mesh.material) {
                     mesh.material = new THREE.MeshPhongMaterial({
                         color: 0x000000,

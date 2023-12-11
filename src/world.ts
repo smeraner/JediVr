@@ -60,8 +60,12 @@ export class World extends THREE.Object3D {
         scene.traverse(child => {
             const mesh = child as THREE.Mesh;
 
+            mesh.castShadow = false;
+            mesh.receiveShadow = false;
+
             if (mesh.isMesh && child.name === "Hemisphere") {
                 const map = (mesh.material as THREE.MeshBasicMaterial).map;
+
                 if (map) {
                     map.wrapS = THREE.RepeatWrapping;
                     map.wrapT = THREE.RepeatWrapping;
@@ -73,6 +77,11 @@ export class World extends THREE.Object3D {
             } else if (child.name === "Player") {
                 this.playerSpawnPoint.copy(child.position);
             }
+
+            // //all lights off
+            // if ((child as THREE.Light).isLight) {
+            //     child.visible = false;
+            // }
 
             //damageable objects
             if(mesh.isMesh && child.userData && child.userData.health) {
@@ -95,7 +104,7 @@ export class World extends THREE.Object3D {
                 
             // }
         });
-
+       
         const helper = new OctreeHelper(this.worldOctree);
         helper.visible = false;
         scene.add(helper);

@@ -35,6 +35,18 @@ export class Saber extends THREE.Object3D<SaberEventMap> {
             gltf.scene.scale.set(0.007, 0.007, 0.007);
             gltf.scene.rotation.set(-Math.PI / 2, 0, 0);
             gltf.scene.position.set(0, 0.005, 0.022);
+            gltf.scene.traverse(child => {
+                const mesh = child as THREE.Mesh;
+                if (mesh.isMesh && mesh.material) {
+                    mesh.castShadow = false;
+                    mesh.receiveShadow = false;
+                    // mesh.material = new THREE.MeshPhongMaterial({
+                    //     color: mesh.material.color,
+                    //     specular: 0x111111,
+                    //     shininess: 200,
+                    // });
+                }
+            });
             return gltf;
         });
     }
