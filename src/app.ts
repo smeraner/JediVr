@@ -233,11 +233,11 @@ export class App {
             this.player.camera.add(this.hand);
         } else {
             this.saber.position.set(0,0,0);
-            this.saber.setInitialRotation(0,0,0);
+            this.saber.setInitialRotation(-Math.PI/2,0,0);
             this.player.camera.remove(this.saber);
 
             this.hand.position.set(0,0,0);
-            this.hand.rotation.set(0,0,0);
+            this.hand.rotation.set(-Math.PI/2,0,0);
             this.player.camera.remove(this.hand);
         }
     }
@@ -248,29 +248,38 @@ export class App {
         this.renderer.xr.enabled = true;
         this.renderer.xr.setFramebufferScaleFactor(2.0);
 
+        const connectController = (e: any) => {          
+            let controller;
+            if(e.data.handedness === 'left') {
+                controller = this.controller1;
+                controller.gamepad = e.data.gamepad;
+                controller.add(this.hand);
+            } else {
+                controller = this.controller2;
+                controller.gamepad = e.data.gamepad;
+                controller.add(this.saber);
+            }
+        }
+        const disconnectController = (e: any) => {
+            let controller;
+            if(e.data.handedness === 'left') {
+                controller = this.controller1;
+                controller.gamepad = null;
+                controller.remove(this.hand);
+            } else {
+                controller = this.controller2;
+                controller.gamepad = null;
+                controller.remove(this.saber);
+            }
+        }
+
         this.controller1 = this.renderer.xr.getController(0);
-        this.controller1.addEventListener('connected', (e: any) => {
-            const handednessLeft = e.data.handedness === 'left';
-            this.controller1.handednessLeft = handednessLeft;
-            this.controller1.gamepad = e.data.gamepad;
-            this.controller1.add(handednessLeft? this.hand : this.saber);
-        });
-        this.controller1.addEventListener('disconnected', (e: any) => {
-            this.controller1.gamepad = null;
-            this.controller1.remove(this.controller1.children[0]);
-        });
+        this.controller1.addEventListener('connected', connectController);
+        this.controller1.addEventListener('disconnected', disconnectController);
 
         this.controller2 = this.renderer.xr.getController(1);
-        this.controller2.addEventListener('connected', (e: any) => {
-            const handednessLeft = e.data.handedness === 'left';
-            this.controller2.handednessLeft = handednessLeft;
-            this.controller2.gamepad = e.data.gamepad;
-            this.controller2.add(handednessLeft? this.hand : this.saber);
-        });
-        this.controller2.addEventListener('disconnected', (e: any) => {
-            this.controller2.gamepad = null;
-            this.controller2.remove(this.controller2.children[0]);
-        });
+        this.controller2.addEventListener('connected', connectController);
+        this.controller2.addEventListener('disconnected', disconnectController);
 
         this.instructionText = createText('', 0.04);
         this.instructionText.position.set(0, 1.6, -0.6);
@@ -338,15 +347,16 @@ export class App {
         }
 
         if (this.controller1.gamepad && this.controller1.gamepad.axes.length > 0) {
-            if (this.controller1.gamepad.buttons[0].pressed && this.trigger1Released) {
-                this.saber.toggle();
-                this.trigger1Released = false;
+            if (this.controller1.gamepad.buttons[0].pressed && this.trigger2Released) {
+                this.trigger2Released = false;
             } else if (!this.controller1.gamepad.buttons[0].pressed) {
-                this.trigger1Released = true;
+                this.trigger2Released = true;
             }
 
-            if (this.player.onFloor && this.controller1.gamepad.buttons[1].pressed) {
-                this.player.velocity.y = 15;
+            if (this.controller1.gamepad.buttons[1].pressed) {
+                this.hand.forcePull();
+            } else {
+                this.hand.forceRelease();
             }
 
             if (this.controller1.gamepad.axes[3] > 0.2) this.player.velocity.add(this.player.getForwardVector().multiplyScalar(-speedDelta));
@@ -356,16 +366,15 @@ export class App {
         }
 
         if (this.controller2.gamepad) {
-            if (this.controller2.gamepad.buttons[0].pressed && this.trigger2Released) {
-                this.trigger2Released = false;
+            if (this.controller2.gamepad.buttons[0].pressed && this.trigger1Released) {
+                this.saber.toggle();
+                this.trigger1Released = false;
             } else if (!this.controller2.gamepad.buttons[0].pressed) {
-                this.trigger2Released = true;
+                this.trigger1Released = true;
             }
 
-            if (this.controller2.gamepad.buttons[1].pressed) {
-                this.hand.forcePull();
-            } else {
-                this.hand.forceRelease();
+            if (this.player.onFloor && this.controller2.gamepad.buttons[1].pressed) {
+                this.player.velocity.y = 15;
             }
 
             if (this.controller2.gamepad.axes[2] > 0.2) {
