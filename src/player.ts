@@ -4,7 +4,21 @@ import { Capsule } from 'three/addons/math/Capsule.js';
 import { Saber } from './saber';
 import { Hand } from './hand';
 
-export class Player extends THREE.Object3D implements DamageableObject {
+interface PlayerEventMap extends THREE.Object3DEventMap  {
+    dead: PlayerDeadEvent;
+    damaged: PlayerDamageEvent;
+}
+
+interface PlayerDeadEvent extends THREE.Event {
+    type: 'dead';
+}
+
+interface PlayerDamageEvent extends THREE.Event {
+    type: 'damaged';
+    health: number;
+}
+
+export class Player extends THREE.Object3D<PlayerEventMap> implements DamageableObject {
     static debug = false;
 
     gravity = 0;
@@ -19,7 +33,7 @@ export class Player extends THREE.Object3D implements DamageableObject {
     camera: THREE.PerspectiveCamera;
     colliderMesh: THREE.Mesh<THREE.CapsuleGeometry, THREE.MeshBasicMaterial, THREE.Object3DEventMap>;
     health: number = 100;
-    damageMultiplyer: number = 0.1;
+    damageMultiplyer: number = 10;
     filterMesh: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial, THREE.Object3DEventMap>;
     saber: Saber;
     hand: Hand;
@@ -94,7 +108,9 @@ export class Player extends THREE.Object3D implements DamageableObject {
         if(this.health === 0) return;
         
         this.health -= amount * this.damageMultiplyer;
+        this.dispatchEvent({type: "damaged", health: this.health} as PlayerDamageEvent);
         if (this.health <= 0) {
+            this.dispatchEvent({type: "dead"} as PlayerDeadEvent);
             this.health = 0;
         }
 

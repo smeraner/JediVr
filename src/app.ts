@@ -164,10 +164,19 @@ export class App {
         this.player.teleport(this.world.playerSpawnPoint);
         this.saber = this.player.saber;
         this.hand = this.player.hand;
+        this.player.addEventListener('dead', () => {
+            this.updateInstructionText('You died.');
+            if(!this.world) return;
+            this.player?.teleport(this.world.playerSpawnPoint);
+        });
+        this.player.addEventListener('damaged', (event: any) => {
+            this.updateInstructionText(`✙ ${event.health.toFixed(0)}`);
+        });
+        this.updateInstructionText(`✙ ${this.player.health.toFixed(0)}`);
 
         //setup saber
         this.setupSaberAndHand();
-        
+
         //this.addDefaultSaberAndHand();
 
         //init trooper
@@ -277,10 +286,6 @@ export class App {
         this.controller2.addEventListener('connected', connectController);
         this.controller2.addEventListener('disconnected', disconnectController);
 
-        this.instructionText = createText('', 0.04);
-        this.instructionText.position.set(0, 1.6, -0.6);
-        this.player.add(this.instructionText);
-
         this.player.add(this.controller1);
         this.player.add(this.controller2);
     }
@@ -383,12 +388,13 @@ export class App {
     }
 
     private updateInstructionText(text: string): void {
-        if(!this.player || !this.instructionText) return;
+        if(!this.player) return;
 
-        this.player.remove(this.instructionText);
+        this.player.camera.remove(this.instructionText);
         this.instructionText = createText(text, 0.04);
-        this.instructionText.position.set(0, 1.6, -0.6);
-        this.player.add(this.instructionText);
+        this.instructionText.position.set(0,0.1,-0.2);
+        this.instructionText.scale.set(0.3,0.3,0.3);
+        this.player.camera.add(this.instructionText);
     }
 
     private teleportPlayerIfOob(): void {
