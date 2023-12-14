@@ -162,10 +162,12 @@ export class App {
         //init player
         this.player = new Player(this.scene, this.audioListenerPromise, this.GRAVITY);
         this.player.teleport(this.world.playerSpawnPoint);
+        this.saber = this.player.saber;
+        this.hand = this.player.hand;
 
-        //init saber
-        this.initSaberAndHand();
+        //setup saber
         this.setupSaberAndHand();
+        
         //this.addDefaultSaberAndHand();
 
         //init trooper
@@ -213,12 +215,6 @@ export class App {
         if(!this.hand || !this.saber) return;
         if (e.button === 2) this.hand.forceRelease();
         if (e.button === 0) this.saber.swing();
-    }
-
-    initSaberAndHand() {
-        if(!this.scene || !this.player) return;
-        this.saber = new Saber(this.scene, this.player.camera, this.audioListenerPromise);
-        this.hand = new Hand(this.scene, this.audioListenerPromise);
     }
 
     setupSaberAndHand(xr=false) {

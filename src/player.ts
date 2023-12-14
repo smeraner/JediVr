@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { World } from './world';
 import { Capsule } from 'three/addons/math/Capsule.js';
+import { Saber } from './saber';
+import { Hand } from './hand';
 
 export class Player extends THREE.Object3D implements DamageableObject {
     static debug = false;
@@ -19,6 +21,8 @@ export class Player extends THREE.Object3D implements DamageableObject {
     health: number = 100;
     damageMultiplyer: number = 0.1;
     filterMesh: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial, THREE.Object3DEventMap>;
+    saber: Saber;
+    hand: Hand;
 
     /**
      * @param {THREE.Scene} scene
@@ -72,10 +76,14 @@ export class Player extends THREE.Object3D implements DamageableObject {
         const capsuleGeometry = new THREE.CapsuleGeometry(this.collider.radius, this.collider.end.y - this.collider.start.y);
         const capsuleMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true });
         const colliderMesh = new THREE.Mesh(capsuleGeometry, capsuleMaterial);
+        colliderMesh.userData.obj = this;
         colliderMesh.position.copy(this.collider.start);
         this.colliderMesh = colliderMesh;
         this.scene.add(colliderMesh);
         this.colliderMesh.visible = Player.debug;
+
+        this.saber = new Saber(this.scene, this.camera, audioListenerPromise);
+        this.hand = new Hand(this.scene, audioListenerPromise);
     }
 
     /**

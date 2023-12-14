@@ -84,6 +84,7 @@ export class Saber extends THREE.Object3D<SaberEventMap> {
     initalRotationY = 0;
     initalRotationZ = 0;
     camera: THREE.Camera;
+    colliderMesh: THREE.Mesh;
 
     constructor(scene: THREE.Scene, camera: THREE.Camera, audioListenerPromise: Promise<THREE.AudioListener>, saberColor = 0xff0000) {
         super();
@@ -159,6 +160,19 @@ export class Saber extends THREE.Object3D<SaberEventMap> {
 
         const raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(), 0, Saber.bladeHeight);
         this.raycaster = raycaster;
+
+        const colliderGeometry = new THREE.CylinderGeometry(0.1, 0.1, Saber.bladeHeight, 8, 1, false);
+        const colliderMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffff00,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.5
+        });
+        const colliderMesh = new THREE.Mesh(colliderGeometry, colliderMaterial);
+        colliderMesh.userData.obj = this;
+        this.colliderMesh = colliderMesh;
+        this.colliderMesh.visible = Saber.debug;
+        this.blade.add(colliderMesh);
 
         this.add(handle);
         this.add(blade);
@@ -287,6 +301,7 @@ export class Saber extends THREE.Object3D<SaberEventMap> {
             }
         }
         this.collide(world, enemys);
+        this.colliderMesh.visible = Saber.debug;
     }
 
     collide(world: World, enemys: Array<Actor>) {
