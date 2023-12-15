@@ -112,13 +112,13 @@ export class Player extends THREE.Object3D<PlayerEventMap> implements Damageable
         if (this.health <= 0) {
             this.health = 0;
             this.dispatchEvent({type: "dead"} as PlayerDeadEvent);
-            this.animateDie();
+            this.blendDie();
         } else {
-            this.animateHit();
+            this.blendHit();
         }
     }
 
-    animateHit() {
+    blendHit() {
         this.filterMesh.material.color.setHex(0xff0000);
         this.filterMesh.material.opacity = 0.35;
         this.filterMesh.visible = true;
@@ -127,19 +127,19 @@ export class Player extends THREE.Object3D<PlayerEventMap> implements Damageable
         }, 200);
     }
 
-    animateDie() {
+    blendDie() {
         this.filterMesh.material.color.setHex(0xff0000);
         this.filterMesh.material.opacity = 1;
         this.filterMesh.visible = true;
     }
 
-    animateBlack() {
+    blendBlack() {
         this.filterMesh.material.color.setHex(0x000000);
         this.filterMesh.material.opacity = 1;
         this.filterMesh.visible = true;
     }
 
-    animateClear() {
+    blendClear() {
         this.filterMesh.visible = false;
     }
 

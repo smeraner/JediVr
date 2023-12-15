@@ -158,7 +158,12 @@ export class App {
 
         //init world
         this.world = new World(this.audioListenerPromise, this.gui);
-        this.world.addEventListener('timerExpired', () => this.updateHud() );
+        this.world.addEventListener('timerExpired', () => {
+            this.updateHud();
+            if(!this.world || !this.player) return;
+            this.player.teleport(this.world.playerSpawnPoint);
+            this.player.blendBlack();
+         } );
         this.world.addEventListener('timerTick', () => this.updateHud() );
         this.scene = await this.world.loadScene();
 
@@ -167,7 +172,12 @@ export class App {
         this.player.teleport(this.world.playerSpawnPoint);
         this.saber = this.player.saber;
         this.hand = this.player.hand;
-        this.player.addEventListener('dead', () => this.updateHud() );
+        this.player.addEventListener('dead', () => {
+            this.updateHud()
+            if(!this.world || !this.player) return;
+            this.player.teleport(this.world.playerSpawnPoint);
+            this.world.stopTimer();
+        });
         this.player.addEventListener('damaged', () => this.updateHud() );
         this.updateHud();
 
@@ -389,7 +399,7 @@ export class App {
 
         let hudText = "";
         if(this.player.health === 0) {
-            hudText = "☠ You died. Press F5 to restart.";
+            hudText = "☠ You died. Reload to restart.";
         } else {
             hudText = `✙ ${this.player.health.toFixed(0)}`;
             if(this.world) {
@@ -399,7 +409,7 @@ export class App {
                     const seconds = this.world.timerSeconds % 60;
                     hudText += ` ⧗ ${minutes}:${seconds.toFixed(0).padStart(2, '0')}`;
                 } else if (this.world.timerSeconds === 0) {
-                    hudText = ` ⧗ Time is up. Press F5 to restart.`;
+                    hudText = ` ⧗ Time is up. Reload to restart.`;
                 }
             }
         }

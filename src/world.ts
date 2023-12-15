@@ -19,6 +19,7 @@ interface WorldTimerTickEvent extends THREE.Event {
 export class World extends THREE.Object3D<WorldEventMap> {
 
     static debug = false;
+    timerInterval: NodeJS.Timeout | undefined;
     static initialize() {
         //load audio     
         const audioLoader = new THREE.AudioLoader();
@@ -129,16 +130,20 @@ export class World extends THREE.Object3D<WorldEventMap> {
     }
 
     startTimer() {
-        const interval = setInterval(() => {
+        this.timerInterval = setInterval(() => {
             this.timerSeconds--;
             if (this.timerSeconds <= 0) {
                 this.timerSeconds = 0;
-                clearInterval(interval);
+                this.stopTimer();
                 this.dispatchEvent({type: "timerExpired"} as WorldTimerExpiredEvent);
             } else {
                 this.dispatchEvent({type: "timerTick"} as WorldTimerTickEvent);
             }
         }, 1000);
+    }
+
+    stopTimer() {
+        clearInterval(this.timerInterval);
     }
 
     update(deltaTime: number) {
