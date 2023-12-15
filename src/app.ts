@@ -3,6 +3,7 @@ import Stats from 'three/addons/libs/stats.module.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { createText } from 'three/addons/webxr/Text2D.js';
+import nipplejs from 'nipplejs';
 
 import { Player } from './player';
 import { World } from './world';
@@ -43,6 +44,7 @@ export class App {
     constructor() {
         this.clock = new THREE.Clock();
         this.gui = new GUI({ width: 200 });
+        this.gui.hide();
         this.initDebugGui();
 
         this.container = document.createElement('div');
@@ -61,6 +63,54 @@ export class App {
         document.body.appendChild(VRButton.createButton(this.renderer));
 
         this.container.appendChild( this.stats.dom );
+
+        //if mobile, add joystick
+        if(window.innerWidth <= 800) {
+            const joystick_left = document.createElement('div');
+            document.body.appendChild(joystick_left);
+            const manager = nipplejs.create({
+                zone: joystick_left,
+                mode: 'static',
+                position: { left: '15%', bottom: '20%' },
+                color: 'red',
+                size: 150,
+            });
+            let managerRepeatInterval: NodeJS.Timeout;
+            manager.on('move', (evt: any, data: any) => {
+                if(managerRepeatInterval) clearInterval(managerRepeatInterval);
+                    managerRepeatInterval = setInterval(() => {
+                    const speedDelta = 0.01 * (this.player?.onFloor ? 25 : 8);
+                    if(!this.player) return;
+                    this.player.velocity.add(this.player.getForwardVector().multiplyScalar(data.vector.y * speedDelta));
+                    this.player.velocity.add(this.player.getSideVector().multiplyScalar(data.vector.x * speedDelta));
+                }, 10);
+            });
+            manager.on('end', () => {
+                if(managerRepeatInterval) clearInterval(managerRepeatInterval);
+            });
+            
+            const joystick_right = document.createElement('div');
+            document.body.appendChild(joystick_right);
+            const manager2 = nipplejs.create({
+                zone: joystick_right,
+                mode: 'static',
+                position: { right: '15%', bottom: '20%' },
+                color: 'red',
+                size: 150,
+            });
+            let manager2RepeatInterval: NodeJS.Timeout;
+            manager2.on('move', (evt: any, data: any) => {
+                if(manager2RepeatInterval) clearInterval(manager2RepeatInterval);
+                manager2RepeatInterval = setInterval(() => {
+                    if(!this.player) return;
+                    this.player.camera.rotation.y -= data.vector.x * 0.01;
+                    this.player.camera.rotation.x += data.vector.y * 0.01;
+                }, 10);
+            });
+            manager2.on('end', () => {
+                if(manager2RepeatInterval) clearInterval(manager2RepeatInterval);
+            });
+        }
 
         this.audioListenerPromise = new Promise<THREE.AudioListener>((resolve) => {
             this.setAudioListener = resolve;
