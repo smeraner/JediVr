@@ -3,7 +3,20 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { OctreeHelper } from 'three/addons/helpers/OctreeHelper.js';
 import { Octree } from 'three/addons/math/Octree.js';
 
-export class World extends THREE.Object3D {
+interface WorldEventMap extends THREE.Object3DEventMap  {
+    timerExpired: WorldTimerExpiredEvent;
+    timerTick: WorldTimerTickEvent;
+}
+
+interface WorldTimerExpiredEvent extends THREE.Event {
+    type: 'timerExpired';
+}
+
+interface WorldTimerTickEvent extends THREE.Event {
+    type: 'timerTick';
+}
+
+export class World extends THREE.Object3D<WorldEventMap> {
 
     static debug = false;
     static initialize() {
@@ -21,6 +34,8 @@ export class World extends THREE.Object3D {
     sound: THREE.Audio | undefined;
     map: THREE.Object3D<THREE.Object3DEventMap> | undefined;
     helper: OctreeHelper | undefined;
+
+    timerSeconds = 120; //seconds
 
     /**
      * @param {Promise<THREE.AudioListener>} audioListenerPromise
@@ -111,6 +126,19 @@ export class World extends THREE.Object3D {
         this.helper = helper;
 
         return scene as THREE.Scene;
+    }
+
+    startTimer() {
+        const interval = setInterval(() => {
+            this.timerSeconds--;
+            if (this.timerSeconds <= 0) {
+                this.timerSeconds = 0;
+                clearInterval(interval);
+                this.dispatchEvent({type: "timerExpired"} as WorldTimerExpiredEvent);
+            } else {
+                this.dispatchEvent({type: "timerTick"} as WorldTimerTickEvent);
+            }
+        }, 1000);
     }
 
     update(deltaTime: number) {

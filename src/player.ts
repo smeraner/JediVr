@@ -110,15 +110,37 @@ export class Player extends THREE.Object3D<PlayerEventMap> implements Damageable
         this.health -= amount * this.damageMultiplyer;
         this.dispatchEvent({type: "damaged", health: this.health} as PlayerDamageEvent);
         if (this.health <= 0) {
-            this.dispatchEvent({type: "dead"} as PlayerDeadEvent);
             this.health = 0;
+            this.dispatchEvent({type: "dead"} as PlayerDeadEvent);
+            this.animateDie();
+        } else {
+            this.animateHit();
         }
+    }
 
-        //hit animation, turn camera red 1 sec
+    animateHit() {
+        this.filterMesh.material.color.setHex(0xff0000);
+        this.filterMesh.material.opacity = 0.35;
         this.filterMesh.visible = true;
         setTimeout(() => {
             this.filterMesh.visible = false;
         }, 200);
+    }
+
+    animateDie() {
+        this.filterMesh.material.color.setHex(0xff0000);
+        this.filterMesh.material.opacity = 1;
+        this.filterMesh.visible = true;
+    }
+
+    animateBlack() {
+        this.filterMesh.material.color.setHex(0x000000);
+        this.filterMesh.material.opacity = 1;
+        this.filterMesh.visible = true;
+    }
+
+    animateClear() {
+        this.filterMesh.visible = false;
     }
 
     getCamera(): THREE.PerspectiveCamera {

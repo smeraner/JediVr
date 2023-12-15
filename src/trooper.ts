@@ -193,7 +193,7 @@ export class Trooper extends Actor {
             laser.addEventListener('expired', () => {
                 this.laserBeams.splice(this.laserBeams.indexOf(laser), 1);
             });
-            this.soundLaser?.play();
+            if(!this.soundLaser?.isPlaying) this.soundLaser?.play();
         }
     }
 

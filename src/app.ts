@@ -148,6 +148,7 @@ export class App {
             if(this.saber) this.saber.on();
         }, 500);
 
+        this.world?.startTimer();
     }
 
     /***
@@ -157,6 +158,8 @@ export class App {
 
         //init world
         this.world = new World(this.audioListenerPromise, this.gui);
+        this.world.addEventListener('timerExpired', () => this.updateHud() );
+        this.world.addEventListener('timerTick', () => this.updateHud() );
         this.scene = await this.world.loadScene();
 
         //init player
@@ -164,15 +167,9 @@ export class App {
         this.player.teleport(this.world.playerSpawnPoint);
         this.saber = this.player.saber;
         this.hand = this.player.hand;
-        this.player.addEventListener('dead', () => {
-            this.updateInstructionText('You died.');
-            if(!this.world) return;
-            this.player?.teleport(this.world.playerSpawnPoint);
-        });
-        this.player.addEventListener('damaged', (event: any) => {
-            this.updateInstructionText(`✙ ${event.health.toFixed(0)}`);
-        });
-        this.updateInstructionText(`✙ ${this.player.health.toFixed(0)}`);
+        this.player.addEventListener('dead', () => this.updateHud() );
+        this.player.addEventListener('damaged', () => this.updateHud() );
+        this.updateHud();
 
         //setup saber
         this.setupSaberAndHand();
@@ -385,6 +382,29 @@ export class App {
                 this.player.rotation.y += 0.005;
             }
         }
+    }
+
+    private updateHud(){
+        if(!this.player) return;
+
+        let hudText = "";
+        if(this.player.health === 0) {
+            hudText = "☠ You died. Press F5 to restart.";
+        } else {
+            hudText = `✙ ${this.player.health.toFixed(0)}`;
+            if(this.world) {
+                if(this.world.timerSeconds > 0) {
+                    // timer is active, 00:00 format
+                    const minutes = Math.floor(this.world.timerSeconds / 60);
+                    const seconds = this.world.timerSeconds % 60;
+                    hudText += ` ⧗ ${minutes}:${seconds.toFixed(0).padStart(2, '0')}`;
+                } else if (this.world.timerSeconds === 0) {
+                    hudText = ` ⧗ Time is up. Press F5 to restart.`;
+                }
+            }
+        }
+
+        this.updateInstructionText(hudText);
     }
 
     private updateInstructionText(text: string): void {
