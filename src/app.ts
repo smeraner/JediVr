@@ -14,6 +14,7 @@ import { Actor } from './actor';
 
 export class App {
     static firstUserActionEvents = ['mousedown', 'touchstart', 'mousemove','scroll','keydown'];
+    static firstUserAction = true;
 
     private hand: Hand | undefined;
     private player: Player | undefined;
@@ -176,6 +177,9 @@ export class App {
      * Plays audio and adds a light saber to the player's scene.
      */
     onFirstUserAction() {
+        if(App.firstUserAction === false) return;
+        App.firstUserAction = false;
+
         App.firstUserActionEvents.forEach((event) => {
             document.removeEventListener(event, this.onFirstUserAction.bind(this));
         });
@@ -221,12 +225,16 @@ export class App {
         this.saber = this.player.saber;
         this.hand = this.player.hand;
         this.player.addEventListener('dead', () => {
-            this.updateHud()
+            if(navigator.vibrate) navigator.vibrate(1000);
+            this.updateHud();
             if(!this.world || !this.player) return;
             this.player.teleport(this.world.playerSpawnPoint);
             this.world.stopTimer();
         });
-        this.player.addEventListener('damaged', () => this.updateHud() );
+        this.player.addEventListener('damaged', () => {
+            if(navigator.vibrate) navigator.vibrate(100);
+            this.updateHud();
+        });
         this.updateHud();
 
         //setup saber
