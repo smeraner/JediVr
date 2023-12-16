@@ -13,6 +13,8 @@ import { Trooper } from './trooper';
 import { Actor } from './actor';
 
 export class App {
+    static firstUserActionEvents = ['mousedown', 'touchstart', 'mousemove','scroll','keydown'];
+
     private hand: Hand | undefined;
     private player: Player | undefined;
     private renderer: THREE.WebGLRenderer;
@@ -126,7 +128,10 @@ export class App {
         this.setupXR();
         
         //init audio on first click
-        document.addEventListener('mousedown', () => this.onFirstUserAction(), { once: true });
+
+        App.firstUserActionEvents.forEach((event) => {
+            document.addEventListener(event, this.onFirstUserAction.bind(this), { once: true });
+        });
 
         this.renderer.xr.addEventListener('sessionstart', () => this.setupSaberAndHand(true));
         this.renderer.xr.addEventListener('sessionend', () => this.setupSaberAndHand(false));
@@ -182,6 +187,10 @@ export class App {
      * Plays audio and adds a light saber to the player's scene.
      */
     onFirstUserAction() {
+        App.firstUserActionEvents.forEach((event) => {
+            document.removeEventListener(event, this.onFirstUserAction.bind(this));
+        });
+
         //init audio
         const listener = new THREE.AudioListener();
         if (this.setAudioListener) {
