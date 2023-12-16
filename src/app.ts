@@ -42,6 +42,8 @@ export class App {
     private audioListenerPromise: Promise<THREE.AudioListener>;
     private container: HTMLDivElement;
     public setAudioListener: any;
+    private joystickMoveVector: { x: number; y: number; } | undefined;
+    joystickLookVector: any;
 
     constructor() {
         this.clock = new THREE.Clock();
@@ -77,18 +79,11 @@ export class App {
                 color: 'red',
                 size: 150,
             });
-            let managerRepeatInterval: NodeJS.Timeout;
-            manager.on('move', (evt: any, data: any) => {
-                if(managerRepeatInterval) clearInterval(managerRepeatInterval);
-                    managerRepeatInterval = setInterval(() => {
-                    const speedDelta = 0.01 * (this.player?.onFloor ? 25 : 8);
-                    if(!this.player) return;
-                    this.player.velocity.add(this.player.getForwardVector().multiplyScalar(data.vector.y * speedDelta));
-                    this.player.velocity.add(this.player.getSideVector().multiplyScalar(data.vector.x * speedDelta));
-                }, 10);
+            manager.on('move', (evt: nipplejs.EventData, data: nipplejs.JoystickOutputData) => {
+                this.joystickMoveVector = data.vector;
             });
             manager.on('end', () => {
-                if(managerRepeatInterval) clearInterval(managerRepeatInterval);
+                this.joystickMoveVector = undefined;
             });
             
             const joystick_right = document.createElement('div');
@@ -100,17 +95,11 @@ export class App {
                 color: 'red',
                 size: 150,
             });
-            let manager2RepeatInterval: NodeJS.Timeout;
             manager2.on('move', (evt: any, data: any) => {
-                if(manager2RepeatInterval) clearInterval(manager2RepeatInterval);
-                manager2RepeatInterval = setInterval(() => {
-                    if(!this.player) return;
-                    this.player.camera.rotation.y -= data.vector.x * 0.01;
-                    this.player.camera.rotation.x += data.vector.y * 0.01;
-                }, 10);
+                this.joystickLookVector = data.vector;
             });
             manager2.on('end', () => {
-                if(manager2RepeatInterval) clearInterval(manager2RepeatInterval);
+                this.joystickLookVector = undefined;
             });
         }
 
@@ -391,6 +380,7 @@ export class App {
         
         const speedDelta = deltaTime * (this.player.onFloor ? 25 : 8);
 
+        //keyboard controls
         if (this.keyStates['KeyW']) {
             this.player.velocity.add(this.player.getForwardVector().multiplyScalar(speedDelta));
         }
@@ -413,6 +403,17 @@ export class App {
             }
         }
 
+        //virtual joystick controls
+        if(this.joystickMoveVector) {
+            this.player.velocity.add(this.player.getForwardVector().multiplyScalar(this.joystickMoveVector.y * speedDelta));
+            this.player.velocity.add(this.player.getSideVector().multiplyScalar(this.joystickMoveVector.x * speedDelta));
+        }
+        if(this.joystickLookVector) {
+            this.player.camera.rotation.y -= this.joystickLookVector.x * 0.1 * speedDelta;
+            this.player.camera.rotation.x += this.joystickLookVector.y * 0.1 * speedDelta;
+        }
+
+        //vr controls
         if (this.controller1.gamepad && this.controller1.gamepad.axes.length > 0) {
             if (this.controller1.gamepad.buttons[0].pressed && this.trigger2Released) {
                 this.trigger2Released = false;
