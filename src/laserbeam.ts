@@ -12,9 +12,7 @@ export interface LaserBeamExpiredEvent extends THREE.Event {
 
 export class LaserBeam extends THREE.Object3D<LaserBeamEventMap> {
 
-    
-
-    color = 0x00ff00;
+    color = 0xff0000;
     thickness = 0.01;
     length = 1;
     maxDistance = 35;
