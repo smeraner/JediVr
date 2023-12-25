@@ -82,7 +82,10 @@ export class LaserBeam extends THREE.Object3D<LaserBeamEventMap> {
         } else {
             this.raycaster.ray.origin.copy(this.position);
             this.raycaster.ray.direction.copy(this.worldDirection);
-            const result = this.raycaster.intersectObjects([player.saber.colliderMesh, player.colliderMesh]);
+            const colliders: Array<THREE.Object3D>  = [player.saber.colliderMesh, player.colliderMesh];
+            if(world.map) colliders.push(world.map);
+
+            const result = this.raycaster.intersectObjects(colliders);
             if (result.length > 0) {
                 if(result[0].object.userData.obj instanceof Player) {
                     player.damage(1);
