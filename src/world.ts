@@ -111,16 +111,11 @@ export class World extends THREE.Object3D<WorldEventMap> {
             mesh.castShadow = false;
             mesh.receiveShadow = false;
 
-            if (child.name === "Enemy") {
+            if (child.name.startsWith("Enemy")) {
                 this.enemySpawnPoints.push(child.position);
             } else if (child.name === "Player") {
                 this.playerSpawnPoint.copy(child.position);
             }
-
-            // //all lights off
-            // if ((child as THREE.Light).isLight) {
-            //     child.visible = false;
-            // }
 
             //damageable objects
             if(mesh.isMesh && child.userData && child.userData.health) {
@@ -158,6 +153,26 @@ export class World extends THREE.Object3D<WorldEventMap> {
         this.helper = helper;
 
         return this.scene;
+    }
+
+    allLightsOff() {
+        if (!this.scene) return;
+
+        this.scene.traverse(child => {
+            if ((child as THREE.Light).isLight) {
+                child.visible = false;
+            }
+        });
+    }
+
+    allLightsOn() {
+        if (!this.scene) return;
+
+        this.scene.traverse(child => {
+            if ((child as THREE.Light).isLight) {
+                child.visible = true;
+            }
+        });
     }
 
     async addHemisphere() {
