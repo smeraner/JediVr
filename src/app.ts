@@ -213,8 +213,10 @@ export class App {
         this.world.addEventListener('timerExpired', () => {
             this.updateHud();
             if(!this.world || !this.player) return;
-            this.player.teleport(this.world.playerSpawnPoint);
             this.player.blendBlack();
+            this.world.allLightsOff();
+            this.world.stopTimer();
+            this.world.stopWorldAudio();
          } );
         this.world.addEventListener('timerTick', () => this.updateHud() );
         this.scene = await this.world.loadScene();
@@ -229,7 +231,9 @@ export class App {
             this.updateHud();
             if(!this.world || !this.player) return;
             this.player.teleport(this.world.playerSpawnPoint);
+            this.world.allLightsOff();
             this.world.stopTimer();
+            this.world.stopWorldAudio();
         });
         this.player.addEventListener('damaged', () => {
             if(navigator.vibrate) navigator.vibrate(100);
@@ -265,7 +269,13 @@ export class App {
                     this.scene.remove(trooper);
                     trooper.dispose();
                     this.enemys.splice(this.enemys.indexOf(trooper), 1);
-                    if(respawn) spawn(spawnPosition,respawn);
+                    if(respawn) {
+                        spawn(spawnPosition,respawn);
+                    } else {
+                        if(this.enemys.length === 0) {
+                            this.displayWinMessage();
+                        }
+                    }
                 }, 3000);
             };
             trooper.addEventListener('dead', deadHandler.bind(this));
@@ -276,6 +286,15 @@ export class App {
         spawnPositions.forEach((spawnPosition) => {
             spawn(spawnPosition);
         });
+    }
+
+    displayWinMessage() {
+        if(!this.player || !this.world) return;
+        this.player.blendBlack();
+        this.updateInstructionText("You win! Reload to restart.");
+        this.world.allLightsOff();
+        this.world.stopTimer();
+        this.world.stopWorldAudio();
     }
 
     mouseDownHandler(e: MouseEvent) {

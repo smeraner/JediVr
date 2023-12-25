@@ -27,13 +27,15 @@ interface WorldTimerTickEvent extends THREE.Event {
 export class World extends THREE.Object3D<WorldEventMap> {
 
     static debug = false;
-    static soundBuffer: Promise<AudioBuffer>;
+    static soundBufferBreath: Promise<AudioBuffer>;
+    static soundBufferAlarm: Promise<AudioBuffer>;
     static model: Promise<THREE.Object3D>;
-    scene: THREE.Scene | undefined;
+
     static initialize() {
         //load audio     
         const audioLoader = new THREE.AudioLoader();
-        World.soundBuffer = audioLoader.loadAsync('./sounds/background_breath.ogg');
+        World.soundBufferBreath = audioLoader.loadAsync('./sounds/background_breath.ogg');
+        World.soundBufferAlarm = audioLoader.loadAsync('./sounds/alarm.ogg');
 
     }
 
@@ -45,6 +47,8 @@ export class World extends THREE.Object3D<WorldEventMap> {
     playerSpawnPoint: THREE.Vector3;
     objectLoader: THREE.ObjectLoader;
     sound: THREE.Audio | undefined;
+    scene: THREE.Scene | undefined;
+    soundAlarm: THREE.Audio | undefined;
     map: THREE.Object3D<THREE.Object3DEventMap> | undefined;
     helper: OctreeHelper | undefined;
 
@@ -70,12 +74,37 @@ export class World extends THREE.Object3D<WorldEventMap> {
 
     async initAudio(audioListenerPromise: Promise<THREE.AudioListener>) {
         const audioListener = await audioListenerPromise;
-        const soundBuffer = await World.soundBuffer;
+        const soundBuffer = await World.soundBufferBreath;
         this.sound = new THREE.Audio(audioListener);
         this.sound.setBuffer(soundBuffer);
         this.sound.setLoop(true);
         this.sound.setVolume(0.3);
-        this.sound.play();
+
+        const soundBufferAlarm = await World.soundBufferAlarm;
+        this.soundAlarm = new THREE.Audio(audioListener);
+        this.soundAlarm.setBuffer(soundBufferAlarm);
+        this.soundAlarm.setLoop(true);
+        this.soundAlarm.setVolume(0.1);
+        
+        this.playWorldAudio();
+    }
+
+    playWorldAudio() {
+        if (this.sound) {
+            this.sound.play();
+        }
+        if (this.soundAlarm) {
+            this.soundAlarm.play();
+        }
+    }
+
+    stopWorldAudio() {
+        if (this.sound) {
+            this.sound.stop();
+        }
+        if (this.soundAlarm) {
+            this.soundAlarm.stop();
+        }
     }
 
     async loadScene(url = './models/scene_ship.json'): Promise<THREE.Scene> {
