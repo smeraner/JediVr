@@ -104,12 +104,10 @@ export class World extends THREE.Object3D<WorldEventMap> {
         //add hemisphere
         this.addHemisphere();
 
-        //find object with name "Hemisphere" and change material to repeat
+        this.addFog();
+
         gltf.scene.traverse(child => {
             const mesh = child as THREE.Mesh;
-
-            mesh.castShadow = false;
-            mesh.receiveShadow = false;
 
             if (child.name.startsWith("Enemy")) {
                 this.enemySpawnPoints.push(child.position);
@@ -144,7 +142,7 @@ export class World extends THREE.Object3D<WorldEventMap> {
         //add clouds
         // const cloud = new Cloud();
         // cloud.position.set(0, 1, 0);
-        // scene.add(cloud);
+        // this.scene.add(cloud);
         // this.animatedObjects.push(cloud);
        
         const helper = new OctreeHelper(this.worldOctree);
@@ -175,6 +173,12 @@ export class World extends THREE.Object3D<WorldEventMap> {
         });
     }
 
+    addFog() {
+        if (!this.scene) return;
+
+        this.scene.fog = new THREE.Fog(0x000000, 10, 35);
+    }
+
     async addHemisphere() {
         if (!this.scene) return;
 
@@ -192,7 +196,9 @@ export class World extends THREE.Object3D<WorldEventMap> {
         const hemisphereGeometry = new THREE.SphereGeometry(1000, 32, 32);
         const hemisphereMaterial = new THREE.MeshBasicMaterial({
             map: texture, 
-            side: THREE.BackSide});
+            side: THREE.BackSide,
+            fog: false
+        });
 
         hemisphere = new THREE.Mesh(hemisphereGeometry, hemisphereMaterial);
         hemisphere.name = "Hemisphere";
