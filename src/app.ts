@@ -123,8 +123,8 @@ export class App {
             document.addEventListener(event, this.onFirstUserAction.bind(this), { once: true });
         });
 
-        this.renderer.xr.addEventListener('sessionstart', () => this.setupSaberAndHand(true));
-        this.renderer.xr.addEventListener('sessionend', () => this.setupSaberAndHand(false));
+        this.renderer.xr.addEventListener('sessionstart', () => this.handleXrModeChange(true));
+        this.renderer.xr.addEventListener('sessionend', () => this.handleXrModeChange(false));
         
         window.addEventListener('resize', this.resize.bind(this));
         document.addEventListener('keydown', (event) => {
@@ -289,9 +289,13 @@ export class App {
         if (e.button === 0) this.saber.swing();
     }
 
-    setupSaberAndHand(xr=false) {
+    handleXrModeChange(xrMode: boolean) {
+        this.setupSaberAndHand(xrMode);
+    }
+
+    setupSaberAndHand(xrMode=false) {
         if(!this.hand || !this.saber || !this.player) return;
-        if(!xr) {
+        if(!xrMode) {
             this.saber.position.set(0.2,-0.3, -0.6);
             this.saber.setInitialRotation(-Math.PI / 4, 0, -0.7);
             this.player.camera.add(this.saber);
@@ -490,7 +494,11 @@ export class App {
 
         this.player.camera.remove(this.instructionText);
         this.instructionText = createText(text, 0.04);
-        this.instructionText.position.set(0,0.1,-0.2);
+        if(this.renderer.xr.isPresenting) {
+            this.instructionText.position.set(0,0.05,-0.2);
+        } else {
+            this.instructionText.position.set(0,0.1,-0.2);
+        }
         this.instructionText.scale.set(0.3,0.3,0.3);
         this.player.camera.add(this.instructionText);
     }
