@@ -1,7 +1,15 @@
 import * as THREE from 'three';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { OctreeHelper } from 'three/addons/helpers/OctreeHelper.js';
 import { Octree } from 'three/addons/math/Octree.js';
+import { Cloud } from './cloud';
+
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath( './draco/' );
+const geometryLoader = new GLTFLoader();
+geometryLoader.setDRACOLoader( dracoLoader );
 
 interface WorldEventMap extends THREE.Object3DEventMap  {
     timerExpired: WorldTimerExpiredEvent;
@@ -19,15 +27,19 @@ interface WorldTimerTickEvent extends THREE.Event {
 export class World extends THREE.Object3D<WorldEventMap> {
 
     static debug = false;
-    timerInterval: NodeJS.Timeout | undefined;
+    static soundBuffer: Promise<AudioBuffer>;
+    static model: Promise<THREE.Object3D>;
+    scene: THREE.Scene | undefined;
     static initialize() {
         //load audio     
         const audioLoader = new THREE.AudioLoader();
         World.soundBuffer = audioLoader.loadAsync('./sounds/background_breath.ogg');
+
     }
 
+    timerInterval: NodeJS.Timeout | undefined;
     worldOctree = new Octree();
-    static soundBuffer: Promise<AudioBuffer>;
+
     gui: GUI;
     enemySpawnPoints: THREE.Vector3[];
     playerSpawnPoint: THREE.Vector3;
@@ -35,6 +47,8 @@ export class World extends THREE.Object3D<WorldEventMap> {
     sound: THREE.Audio | undefined;
     map: THREE.Object3D<THREE.Object3DEventMap> | undefined;
     helper: OctreeHelper | undefined;
+
+    animatedObjects: THREE.Object3D[] = [];
 
     timerSeconds = 120; //seconds
 
@@ -65,30 +79,39 @@ export class World extends THREE.Object3D<WorldEventMap> {
     }
 
     async loadScene(url = './models/scene_ship.json'): Promise<THREE.Scene> {
+        this.scene = new THREE.Scene();
 
-        const scene = await this.objectLoader.loadAsync(url);
+        //load geometry
+        const gltf = await geometryLoader.loadAsync('./models/scene_ship.glb');
+        
+        //optimize performance
+        gltf.scene.traverse(child => {
+            const mesh = child as THREE.Mesh;
+            if (mesh.isMesh) {
+                const mesh = child as THREE.Mesh;
+                mesh.castShadow = false;
+                mesh.receiveShadow = false;
+            }
+            const light = child as THREE.Light;
+            if (light.isLight) {
+                light.castShadow = false;
+            }
+        });
 
-        const map = scene.children.find(child=> child.name==="collision-world.glb");
-        this.map = map;
+        this.map = gltf.scene;
         this.rebuildOctree();
 
+        //add hemisphere
+        this.addHemisphere();
+
         //find object with name "Hemisphere" and change material to repeat
-        scene.traverse(child => {
+        gltf.scene.traverse(child => {
             const mesh = child as THREE.Mesh;
 
             mesh.castShadow = false;
             mesh.receiveShadow = false;
 
-            if (mesh.isMesh && child.name === "Hemisphere") {
-                const map = (mesh.material as THREE.MeshBasicMaterial).map;
-
-                if (map) {
-                    map.wrapS = THREE.RepeatWrapping;
-                    map.wrapT = THREE.RepeatWrapping;
-                    map.repeat.set(2, 2);
-                    map.anisotropy = 4;
-                }
-            } else if (child.name === "Enemy") {
+            if (child.name === "Enemy") {
                 this.enemySpawnPoints.push(child.position);
             } else if (child.name === "Player") {
                 this.playerSpawnPoint.copy(child.position);
@@ -120,13 +143,46 @@ export class World extends THREE.Object3D<WorldEventMap> {
                 
             // }
         });
+
+        this.scene.add(gltf.scene);
+
+        //add clouds
+        // const cloud = new Cloud();
+        // cloud.position.set(0, 1, 0);
+        // scene.add(cloud);
+        // this.animatedObjects.push(cloud);
        
         const helper = new OctreeHelper(this.worldOctree);
         helper.visible = false;
-        scene.add(helper);
+        this.scene.add(helper);
         this.helper = helper;
 
-        return scene as THREE.Scene;
+        return this.scene;
+    }
+
+    async addHemisphere() {
+        if (!this.scene) return;
+
+        //check if scene has hemisphere
+        let hemisphere = this.scene.getObjectByName("Hemisphere");
+        if (hemisphere) return;
+
+        const textureLoader = new THREE.TextureLoader();
+        const texture = await textureLoader.loadAsync('./textures/night-sky.jpg');
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(2, 2);
+        texture.anisotropy = 4;
+
+        const hemisphereGeometry = new THREE.SphereGeometry(1000, 32, 32);
+        const hemisphereMaterial = new THREE.MeshBasicMaterial({
+            map: texture, 
+            side: THREE.BackSide});
+
+        hemisphere = new THREE.Mesh(hemisphereGeometry, hemisphereMaterial);
+        hemisphere.name = "Hemisphere";
+        hemisphere.position.set(0, 0, 0);
+        this.scene.add(hemisphere);
     }
 
     startTimer() {
@@ -146,7 +202,12 @@ export class World extends THREE.Object3D<WorldEventMap> {
         clearInterval(this.timerInterval);
     }
 
-    update(deltaTime: number) {
+    update(deltaTime: number, camera: THREE.Camera) {
+        this.animatedObjects.forEach(object => {
+            if (object instanceof Cloud) {
+                object.update(camera);
+            }
+        });
 
     }
 

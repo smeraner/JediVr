@@ -27,7 +27,6 @@ module.exports = (env, argv) => ({
         historyApiFallback: true,
         host: '0.0.0.0',
         allowedHosts: 'all',
-        open: true,
         compress: true,
         port: 8080,
         server: {
@@ -84,7 +83,8 @@ module.exports = (env, argv) => ({
             patterns: [
                 { from: './models', to: 'models' },
                 { from: './sounds', to: 'sounds' },
-                { from: './textures', to: 'textures' }
+                { from: './textures', to: 'textures' },
+                { from: './node_modules/three/examples/jsm/libs/draco', to: 'draco' },
             ],
         }),
         new HtmlWebpackPlugin({

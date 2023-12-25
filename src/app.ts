@@ -519,7 +519,7 @@ export class App {
                 enemy.update(deltaTime, this.world, this.player);
             }
 
-            if (this.world) this.world.update(deltaTime);
+            if (this.world) this.world.update(deltaTime, this.player.camera);
 
             this.teleportPlayerIfOob();
         }
