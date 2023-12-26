@@ -219,7 +219,7 @@ export class World extends THREE.Object3D<WorldEventMap> {
         const texture = await textureLoader.loadAsync('./textures/night-sky.jpg');
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
-        texture.repeat.set(2, 2);
+        texture.repeat.set(4, 4);
         texture.anisotropy = 4;
 
         const hemisphereGeometry = new THREE.SphereGeometry(1000, 32, 32);

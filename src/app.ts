@@ -409,7 +409,7 @@ export class App {
     private controls(deltaTime: number): void {
         if(!this.player || !this.saber || !this.hand) return;
         
-        const speedDelta = deltaTime * (this.player.onFloor ? 25 : 8);
+        const speedDelta = deltaTime * (this.player.onFloor ? this.player.speedOnFloor : this.player.speedInAir);
 
         //keyboard controls
         if (this.keyStates['KeyW']) {

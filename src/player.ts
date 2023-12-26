@@ -22,6 +22,8 @@ export class Player extends THREE.Object3D<PlayerEventMap> implements Damageable
     static debug = false;
 
     gravity = 0;
+    speedOnFloor = 15;
+    speedInAir = 5;
     onFloor = false;
 
     colliderHeight = .3;
@@ -55,13 +57,13 @@ export class Player extends THREE.Object3D<PlayerEventMap> implements Damageable
         let far = 1000; // > 1080px screen width res camera
         let near = 0.1;
 
-        // Mobile camera
-        if (window.innerWidth <= 768) {
-            far = 500
-            // 769px - 1080px screen width camera
-        } else if (window.innerWidth >= 769 && window.innerWidth <= 1080) {
-            far = 750
-        } 
+        // // Mobile camera
+        // if (window.innerWidth <= 768) {
+        //     far = 500
+        //     // 769px - 1080px screen width camera
+        // } else if (window.innerWidth >= 769 && window.innerWidth <= 1080) {
+        //     far = 750
+        // } 
 
         this.camera = new THREE.PerspectiveCamera(
             fov,
