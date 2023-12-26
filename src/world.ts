@@ -29,6 +29,7 @@ export class World extends THREE.Object3D<WorldEventMap> {
     static debug = false;
     static soundBufferBreath: Promise<AudioBuffer>;
     static soundBufferAlarm: Promise<AudioBuffer>;
+    static soundBufferIntro: Promise<AudioBuffer>;
     static model: Promise<THREE.Object3D>;
 
     static initialize() {
@@ -36,7 +37,7 @@ export class World extends THREE.Object3D<WorldEventMap> {
         const audioLoader = new THREE.AudioLoader();
         World.soundBufferBreath = audioLoader.loadAsync('./sounds/background_breath.ogg');
         World.soundBufferAlarm = audioLoader.loadAsync('./sounds/alarm.ogg');
-
+        World.soundBufferIntro = audioLoader.loadAsync('./sounds/intro.ogg');
     }
 
     timerInterval: NodeJS.Timeout | undefined;
@@ -46,9 +47,10 @@ export class World extends THREE.Object3D<WorldEventMap> {
     enemySpawnPoints: THREE.Vector3[];
     playerSpawnPoint: THREE.Vector3;
     objectLoader: THREE.ObjectLoader;
-    sound: THREE.Audio | undefined;
     scene: THREE.Scene | undefined;
+    soundBreath: THREE.Audio | undefined;
     soundAlarm: THREE.Audio | undefined;
+    soundIntro: THREE.Audio | undefined;
     map: THREE.Object3D<THREE.Object3DEventMap> | undefined;
     helper: OctreeHelper | undefined;
 
@@ -75,32 +77,44 @@ export class World extends THREE.Object3D<WorldEventMap> {
     async initAudio(audioListenerPromise: Promise<THREE.AudioListener>) {
         const audioListener = await audioListenerPromise;
         const soundBuffer = await World.soundBufferBreath;
-        this.sound = new THREE.Audio(audioListener);
-        this.sound.setBuffer(soundBuffer);
-        this.sound.setLoop(true);
-        this.sound.setVolume(0.3);
+        this.soundBreath = new THREE.Audio(audioListener);
+        this.soundBreath.setBuffer(soundBuffer);
+        this.soundBreath.setLoop(true);
+        this.soundBreath.setVolume(0.3);
 
         const soundBufferAlarm = await World.soundBufferAlarm;
         this.soundAlarm = new THREE.Audio(audioListener);
         this.soundAlarm.setBuffer(soundBufferAlarm);
         this.soundAlarm.setLoop(true);
         this.soundAlarm.setVolume(0.1);
+
+        const soundBufferIntro = await World.soundBufferIntro;
+        this.soundIntro = new THREE.Audio(audioListener);
+        this.soundIntro.setBuffer(soundBufferIntro);
+        this.soundIntro.setLoop(false);
+        this.soundIntro.setVolume(0.3);
         
         this.playWorldAudio();
     }
 
     playWorldAudio() {
-        if (this.sound) {
-            this.sound.play();
+        if (this.soundBreath) {
+            this.soundBreath.play();
         }
-        if (this.soundAlarm) {
-            this.soundAlarm.play();
-        }
+        setTimeout(() => {
+            if(!this.soundIntro) return;
+            this.soundIntro.play();
+            this.soundIntro.onEnded = () => {
+                if (this.soundAlarm) {
+                    this.soundAlarm.play();
+                }
+            }
+        }, 1000);
     }
 
     stopWorldAudio() {
-        if (this.sound) {
-            this.sound.stop();
+        if (this.soundBreath) {
+            this.soundBreath.stop();
         }
         if (this.soundAlarm) {
             this.soundAlarm.stop();
