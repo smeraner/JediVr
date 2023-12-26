@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Player } from './player';
 import { World } from './world';
 import { Saber } from './saber';
+import { Actor } from './actor';
 
 interface LaserBeamEventMap extends THREE.Object3DEventMap {
     expired: LaserBeamExpiredEvent;
@@ -70,7 +71,7 @@ export class LaserBeam extends THREE.Object3D<LaserBeamEventMap> {
         this.scene.remove(this);
     }
 
-    update(deltaTime: number, world: World, player: Player) {
+    update(deltaTime: number, source:Actor, world: World, player: Player) {
         this.distance += this.speed * deltaTime;
 
         //move in direction
@@ -83,7 +84,7 @@ export class LaserBeam extends THREE.Object3D<LaserBeamEventMap> {
         } else {
             this.raycaster.ray.origin.copy(this.position);
             this.raycaster.ray.direction.copy(this.worldDirection);
-            const colliders: Array<THREE.Object3D>  = [player.saber.colliderMesh, player.colliderMesh];
+            const colliders: Array<THREE.Object3D>  = [player.saber.colliderMesh, player.colliderMesh, source.colliderMesh];
             if(world.map) colliders.push(world.map);
 
             const result = this.raycaster.intersectObjects(colliders);
@@ -91,13 +92,12 @@ export class LaserBeam extends THREE.Object3D<LaserBeamEventMap> {
                 if(result[0].object.userData.obj instanceof Player) {
                     player.damage(1);
                     this.expire();
-                }
-                if(result[0].object.userData.obj instanceof Saber) {
-                    //reflect laser
-                    if(result[0].face) {
-                        this.worldDirection.multiplyScalar(-1);
-                    }
-
+                } else if(result[0].object.userData.obj instanceof Saber) {
+                    //throw laser in direction of player camera
+                    this.worldDirection.multiplyScalar(-1);
+                } else if(result[0].object.userData.obj instanceof Actor) {
+                    source.damage(1000);
+                    this.expire();
                 } else {
                     this.expire();
                 }

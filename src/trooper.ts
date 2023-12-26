@@ -174,7 +174,7 @@ export class Trooper extends Actor {
 
         //update laser beams
         this.laserBeams.forEach(laser => {
-            laser.update(deltaTime, world, player);
+            laser.update(deltaTime, this, world, player);
         });
 
     }
