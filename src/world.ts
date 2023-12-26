@@ -54,7 +54,7 @@ export class World extends THREE.Object3D<WorldEventMap> {
 
     animatedObjects: THREE.Object3D[] = [];
 
-    timerSeconds = 120; //seconds
+    timerSeconds = 90; //seconds
 
     /**
      * @param {Promise<THREE.AudioListener>} audioListenerPromise

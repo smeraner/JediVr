@@ -329,7 +329,8 @@ export class Saber extends THREE.Object3D<SaberEventMap> {
                 collisions.forEach(col => {
                     const point = col.intersection.point;
                     const distance = col.intersection.distance;
-                    this.collisionEffect(point, distance);
+                    const face = col.intersection.face;
+                    this.collisionEffect(point, distance, face);
                     if (col.obj && col.obj.damage)
                         col.obj.damage(5);
                 });
@@ -339,13 +340,14 @@ export class Saber extends THREE.Object3D<SaberEventMap> {
         }
     }
 
-    collisionEffect(point: THREE.Vector3, distance: number) {
+    fromVector: THREE.Vector3 = new THREE.Vector3(0, 0, 1);
+    collisionEffect(point: THREE.Vector3, distance: number, face?: THREE.Face | null) {
+        this.light.position.y = distance - Saber.bladeHeight * 0.5 - 0.15;
+
         if(this.lensPlane === undefined) return;
         this.lensPlane.visible = true;
-        this.lensPlane.position.copy(point);
-        this.lensPlane.quaternion.copy(this.camera.quaternion);
-
-        this.light.position.y = distance - Saber.bladeHeight * 0.5 - 0.5;
+        this.light.getWorldPosition(this.lensPlane.position);
+        if(face) this.lensPlane.quaternion.setFromUnitVectors(this.fromVector, face.normal);       
     }
 
     hideCollisionEffect() {

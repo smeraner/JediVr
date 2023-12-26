@@ -19,7 +19,7 @@ export class LaserBeam extends THREE.Object3D<LaserBeamEventMap> {
     length = 1;
     maxDistance = 35;
     distance = 0;
-    speed = 10;
+    speed = 15;
     scene: THREE.Scene;
     direction = new THREE.Vector3();
     raycaster: THREE.Raycaster;
