@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Player } from './player';
 import { World } from './world';
+import { Saber } from './saber';
 
 interface LaserBeamEventMap extends THREE.Object3DEventMap {
     expired: LaserBeamExpiredEvent;
@@ -89,8 +90,17 @@ export class LaserBeam extends THREE.Object3D<LaserBeamEventMap> {
             if (result.length > 0) {
                 if(result[0].object.userData.obj instanceof Player) {
                     player.damage(1);
+                    this.expire();
                 }
-                this.expire();
+                if(result[0].object.userData.obj instanceof Saber) {
+                    //reflect laser
+                    if(result[0].face) {
+                        this.worldDirection.multiplyScalar(-1);
+                    }
+
+                } else {
+                    this.expire();
+                }
             }
 
         }
